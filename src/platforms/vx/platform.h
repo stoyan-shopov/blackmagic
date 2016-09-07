@@ -99,12 +99,8 @@ static inline int platform_hwversion(void) { return 0; }
 #define TMS_SET_MODE() \
 	gpio_set_mode(TMS_PORT, GPIO_MODE_OUTPUT_50_MHZ, \
 	              GPIO_CNF_OUTPUT_PUSHPULL, TMS_PIN);
-#define SWDIO_MODE_FLOAT() \
-	gpio_set_mode(SWDIO_PORT, GPIO_MODE_INPUT, \
-	              GPIO_CNF_INPUT_FLOAT, SWDIO_PIN);
-#define SWDIO_MODE_DRIVE() \
-	gpio_set_mode(SWDIO_PORT, GPIO_MODE_OUTPUT_50_MHZ, \
-	              GPIO_CNF_OUTPUT_PUSHPULL, SWDIO_PIN);
+#define SWDIO_MODE_FLOAT() do { GPIO_CRH(GPIOA) = (GPIO_CRH(GPIOA) & ~ (0b1111 << ((15 - 8) * 4))) | (GPIO_MODE_INPUT << ((15 - 8) * 4)) | (GPIO_CNF_INPUT_FLOAT << (((15 - 8) * 4) + 2)); } while(0);
+#define SWDIO_MODE_DRIVE() do { GPIO_CRH(GPIOA) = (GPIO_CRH(GPIOA) & ~ (0b1111 << ((15 - 8) * 4))) | (GPIO_MODE_OUTPUT_50_MHZ << ((15 - 8) * 4)) | (GPIO_CNF_OUTPUT_PUSHPULL << (((15 - 8) * 4) + 2)); } while(0);
 
 #define UART_PIN_SETUP() \
 	gpio_set_mode(USBUSART_PORT, GPIO_MODE_OUTPUT_2_MHZ, \

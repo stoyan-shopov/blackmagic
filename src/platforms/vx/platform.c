@@ -175,7 +175,6 @@ counters;
 static inline void swdptap_turnaround(uint8_t dir)
 {
 	static uint8_t olddir = 0;
-
 	/* Don't turnaround if direction not changing */
 	if(dir == olddir) return;
 	olddir = dir;
@@ -310,6 +309,34 @@ static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t dat
 	asm("bcs	1f");
 	asm("str	r2,	[r0]");
 	asm("1:");
+}
+
+int swdptap_seq_out_8bits_read_ack(uint32_t data)
+{
+	counters.seq_out ++;
+	swdptap_turnaround(0);
+	int ticks = 8;
+	int ack = 0;
+
+	while (ticks--) {
+		if (data & 1)
+			SWDIO_HI
+		else
+			SWDIO_LOW
+		SWCLK_PULSE
+		data >>= 1;
+	}
+	swdptap_turnaround(1);
+	if (SWDIO_READ)
+		ack |= 1;
+	SWCLK_PULSE
+	if (SWDIO_READ)
+		ack |= 2;
+	SWCLK_PULSE
+	if (SWDIO_READ)
+		ack |= 4;
+	SWCLK_PULSE
+	return ack;
 }
 
 void swdptap_seq_out(uint32_t MS, int ticks)

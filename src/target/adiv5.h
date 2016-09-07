@@ -110,6 +110,9 @@ typedef struct ADIv5_DP_s {
 	uint32_t (*error)(struct ADIv5_DP_s *dp);
 	uint32_t (*low_access)(struct ADIv5_DP_s *dp, uint8_t RnW,
                                uint16_t addr, uint32_t value);
+	uint32_t (*low_access_fast)(struct ADIv5_DP_s *dp, uint8_t RnW,
+                               uint16_t addr, uint32_t value);
+	void	(* insert_idle_cycles)(int nr_cycles);
 	void (*abort)(struct ADIv5_DP_s *dp, uint32_t abort);
 
 	union {
@@ -132,6 +135,12 @@ static inline uint32_t adiv5_dp_low_access(struct ADIv5_DP_s *dp, uint8_t RnW,
                                            uint16_t addr, uint32_t value)
 {
 	return dp->low_access(dp, RnW, addr, value);
+}
+
+static inline uint32_t adiv5_dp_low_access_fast(struct ADIv5_DP_s *dp, uint8_t RnW,
+                                           uint16_t addr, uint32_t value)
+{
+	return dp->low_access_fast(dp, RnW, addr, value);
 }
 
 static inline void adiv5_dp_abort(struct ADIv5_DP_s *dp, uint32_t abort)

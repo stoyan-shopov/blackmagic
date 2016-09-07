@@ -39,6 +39,8 @@ static uint32_t adiv5_swdp_error(ADIv5_DP_t *dp);
 
 static uint32_t adiv5_swdp_low_access(ADIv5_DP_t *dp, uint8_t RnW,
 				      uint16_t addr, uint32_t value);
+static uint32_t adiv5_swdp_low_access_fast(ADIv5_DP_t *dp, uint8_t RnW,
+				      uint16_t addr, uint32_t value);
 
 static void adiv5_swdp_abort(ADIv5_DP_t *dp, uint32_t abort);
 
@@ -74,6 +76,7 @@ int adiv5_swdp_scan(void)
 	dp->dp_read = adiv5_swdp_read;
 	dp->error = adiv5_swdp_error;
 	dp->low_access = adiv5_swdp_low_access;
+	dp->low_access_fast = adiv5_swdp_low_access_fast;
 	dp->abort = adiv5_swdp_abort;
 
 	adiv5_swdp_error(dp);
@@ -162,6 +165,54 @@ static uint32_t adiv5_swdp_low_access(ADIv5_DP_t *dp, uint8_t RnW,
 
 	/* REMOVE THIS */
 	swdptap_seq_out(0, 8);
+
+	return response;
+}
+
+static uint32_t adiv5_swdp_low_access_fast(ADIv5_DP_t *dp, uint8_t RnW,
+				      uint16_t addr, uint32_t value)
+{
+extern int swdptap_seq_out_8bits_read_ack(uint32_t data);
+
+	bool APnDP = addr & ADIV5_APnDP;
+	addr &= 0xff;
+	uint8_t request = 0x81;
+	uint32_t response = 0;
+	uint8_t ack;
+	platform_timeout timeout;
+
+	if(APnDP && dp->fault) return 0;
+
+	if(APnDP) request ^= 0x22;
+	if(RnW)   request ^= 0x24;
+
+	addr &= 0xC;
+	request |= (addr << 1) & 0x18;
+	if((addr == 4) || (addr == 8))
+		request ^= 0x20;
+
+	platform_timeout_set(&timeout, 2000);
+	do {
+		ack = swdptap_seq_out_8bits_read_ack(request);
+	} while (!platform_timeout_is_expired(&timeout) && ack == SWDP_ACK_WAIT);
+
+	if (ack == SWDP_ACK_WAIT)
+		raise_exception(EXCEPTION_TIMEOUT, "SWDP ACK timeout");
+
+	if(ack == SWDP_ACK_FAULT) {
+		dp->fault = 1;
+		return 0;
+	}
+
+	if(ack != SWDP_ACK_OK)
+		raise_exception(EXCEPTION_ERROR, "SWDP invalid ACK");
+
+	if(RnW) {
+		if(swdptap_seq_in_parity(&response, 32))  /* Give up on parity error */
+			raise_exception(EXCEPTION_ERROR, "SWDP Parity error");
+	} else {
+		swdptap_seq_out_parity(value, 32);
+	}
 
 	return response;
 }

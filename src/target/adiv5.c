@@ -509,22 +509,22 @@ adiv5_mem_read(ADIv5_AP_t *ap, void *dest, uint32_t src, size_t len)
 
 	len >>= align;
 	ap_mem_access_setup(ap, src, align);
-	adiv5_dp_low_access(ap->dp, ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
+	adiv5_dp_low_access_fast(ap->dp, ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
 	while (--len) {
-		tmp = adiv5_dp_low_access(ap->dp, ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
+		tmp = adiv5_dp_low_access_fast(ap->dp, ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
 		dest = extract(dest, src, tmp, align);
 
 		src += (1 << align);
 		/* Check for 10 bit address overflow */
 		if ((src ^ osrc) & 0xfffffc00) {
 			osrc = src;
-			adiv5_dp_low_access(ap->dp,
+			adiv5_dp_low_access_fast(ap->dp,
 					ADIV5_LOW_WRITE, ADIV5_AP_TAR, src);
-			adiv5_dp_low_access(ap->dp,
+			adiv5_dp_low_access_fast(ap->dp,
 					ADIV5_LOW_READ, ADIV5_AP_DRW, 0);
 		}
 	}
-	tmp = adiv5_dp_low_access(ap->dp, ADIV5_LOW_READ, ADIV5_DP_RDBUFF, 0);
+	tmp = adiv5_dp_low_access_fast(ap->dp, ADIV5_LOW_READ, ADIV5_DP_RDBUFF, 0);
 	extract(dest, src, tmp, align);
 }
 
