@@ -114,6 +114,53 @@ void platform_request_boot(void)
 #define SWDIO_LOW		do { GPIOA_BRR = 1 << 15; } while (0);
 #define SWDIO_READ		((GPIOA_IDR & (1 << 15)) ? 1 : 0)
 
+#define SWDIO_BIT_PORT_ADDR		& GPIOA_BSRR
+#define SWDIO_SET_BIT_PORT_MASK		(1 << 15)
+#define SWDIO_RESET_BIT_PORT_MASK	(1 << 31)
+
+#define SWDIO_READ_PORT_ADDR		& GPIOA_IDR
+#define SWDIO_READ_BIT_MASK		(1 << 15)
+
+#define SWCLK_BIT_PORT_ADDR		& GPIOB_BSRR
+#define SWCLK_SET_BIT_PORT_MASK		(1 << 5)
+#define SWCLK_RESET_BIT_PORT_MASK	(1 << 21)
+
+static const struct sw_driving_data
+{
+	uint32_t	swdio_set_reset_port_address;
+	uint32_t	swdio_set_bit_mask;
+	uint32_t	swdio_reset_bit_mask;
+	uint32_t	swclk_set_reset_port_address;
+	uint32_t	swclk_set_bit_mask;
+	uint32_t	swclk_reset_bit_mask;
+}
+vx_sw_driving_data =
+{
+	.swdio_set_reset_port_address	=	SWDIO_BIT_PORT_ADDR,
+	.swdio_set_bit_mask		=	SWDIO_SET_BIT_PORT_MASK,
+	.swdio_reset_bit_mask		=	SWDIO_RESET_BIT_PORT_MASK,
+	.swclk_set_reset_port_address	=	SWCLK_BIT_PORT_ADDR,
+	.swclk_set_bit_mask		=	SWCLK_SET_BIT_PORT_MASK,
+	.swclk_reset_bit_mask		=	SWCLK_RESET_BIT_PORT_MASK,
+};
+
+static const struct sw_sampling_data
+{
+	uint32_t	swdio_read_port_address;
+	uint32_t	swdio_read_bit_mask;
+	uint32_t	swclk_set_reset_port_address;
+	uint32_t	swclk_set_bit_mask;
+	uint32_t	swclk_reset_bit_mask;
+}
+vx_sw_sampling_data =
+{
+	.swdio_read_port_address	=	SWDIO_READ_PORT_ADDR,
+	.swdio_read_bit_mask		=	SWDIO_READ_BIT_MASK,
+	.swclk_set_reset_port_address	=	SWCLK_BIT_PORT_ADDR,
+	.swclk_set_bit_mask		=	SWCLK_SET_BIT_PORT_MASK,
+	.swclk_reset_bit_mask		=	SWCLK_RESET_BIT_PORT_MASK,
+};
+
 #pragma GCC optimize ("O3")
 
 struct
@@ -144,9 +191,7 @@ static inline void swdptap_turnaround(uint8_t dir)
 
 static inline int swdptap_bit_in_vx(void)
 {
-	uint16_t ret;
-
-	swdptap_turnaround(1);
+	int ret;
 
 	ret = SWDIO_READ;
 	SWCLK_PULSE
@@ -154,13 +199,60 @@ static inline int swdptap_bit_in_vx(void)
 	return ret;
 }
 
+static uint32_t swdptap_seq_in_32bits_asm(struct sw_sampling_data * sw) __attribute__((naked));
+static uint32_t swdptap_seq_in_32bits_asm(struct sw_sampling_data * sw)
+{
+#define SWCLK_PULSE_ASM		asm("str	r5,	[r4]"); 	asm("str	r6,	[r4]");
+#define SHIFT_BIT_IN_ASM	asm("ldr	r1,	[r2]");\
+				asm("lsr	r0,	r0,	#1");\
+				asm("tst	r1,	r3");\
+				asm("it		ne");\
+				asm("orrne	r0,	r0,	#0x80000000");
+
+	asm("push	{ r4, r5, r6, lr }");
+	asm("ldmia	r0,	{ r2, r3, r4, r5, r6 }");
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
+	asm("pop	{ r4, r5, r6, pc }");
+}
+
 uint32_t swdptap_seq_in(int ticks)
 {
+	swdptap_turnaround(1);
 	counters.seq_in ++;
 	if (/* ;-) */ ticks == 3)
 	{
 		int res = 0;
-		swdptap_turnaround(1);
 		if (SWDIO_READ)
 			res |= 1;
 		SWCLK_PULSE
@@ -174,6 +266,8 @@ uint32_t swdptap_seq_in(int ticks)
 	}
 	else
 	{
+		if (ticks == 32)
+			return swdptap_seq_in_32bits_asm(& vx_sw_sampling_data);
 		uint32_t index = 1;
 		uint32_t ret = 0;
 
@@ -189,22 +283,33 @@ uint32_t swdptap_seq_in(int ticks)
 
 bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 {
-	uint32_t index = 1;
-	uint8_t parity = 0;
-	*ret = 0;
+	uint32_t parity;
 	counters.seq_in_parity ++;
 
-	while (ticks--) {
-		if (swdptap_bit_in_vx()) {
-			*ret |= index;
-			parity ^= 1;
-		}
-		index <<= 1;
-	}
-	if (swdptap_bit_in_vx())
-		parity ^= 1;
+	parity = * ret = swdptap_seq_in(ticks);
 
-	return parity;
+	parity = parity ^ (parity >> 16);
+	parity = parity ^ (parity >> 8);
+	parity = parity ^ (parity >> 4);
+	parity = parity ^ (parity >> 2);
+	parity = parity ^ (parity >> 1);
+
+	return ((swdptap_bit_in_vx() ^ parity) & 1) != 0;
+}
+
+static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t data) __attribute__((naked));
+static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t data)
+{
+	asm("push	{ r4, r5, r6, lr }");
+	asm("mov	r6,	r1");
+	asm("ldmia	r0,	{ r0, r1, r2, r3, r4, r5 }");
+
+	/* drive data */
+	asm("lsr	r6,	r6,	#1");
+	asm("str	r1,	[r0]");
+	asm("bcs	1f");
+	asm("str	r2,	[r0]");
+	asm("1:");
 }
 
 void swdptap_seq_out(uint32_t MS, int ticks)
