@@ -134,7 +134,7 @@ static const struct sw_driving_data
 	uint32_t	swclk_set_bit_mask;
 	uint32_t	swclk_reset_bit_mask;
 }
-vx_sw_driving_data =
+sw_driving_data =
 {
 	.swdio_set_reset_port_address	=	SWDIO_BIT_PORT_ADDR,
 	.swdio_set_bit_mask		=	SWDIO_SET_BIT_PORT_MASK,
@@ -152,7 +152,7 @@ static const struct sw_sampling_data
 	uint32_t	swclk_set_bit_mask;
 	uint32_t	swclk_reset_bit_mask;
 }
-vx_sw_sampling_data =
+sw_sampling_data =
 {
 	.swdio_read_port_address	=	SWDIO_READ_PORT_ADDR,
 	.swdio_read_bit_mask		=	SWDIO_READ_BIT_MASK,
@@ -243,6 +243,8 @@ static uint32_t swdptap_seq_in_32bits_asm(struct sw_sampling_data * sw)
 	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
 	SHIFT_BIT_IN_ASM SWCLK_PULSE_ASM
 	asm("pop	{ r4, r5, r6, pc }");
+#undef SWCLK_PULSE_ASM
+#undef SHIFT_BIT_IN_ASM
 }
 
 uint32_t swdptap_seq_in(int ticks)
@@ -266,7 +268,7 @@ uint32_t swdptap_seq_in(int ticks)
 	else
 	{
 		if (ticks == 32)
-			return swdptap_seq_in_32bits_asm(& vx_sw_sampling_data);
+			return swdptap_seq_in_32bits_asm(& sw_sampling_data);
 		uint32_t index = 1;
 		uint32_t ret = 0;
 
@@ -311,8 +313,61 @@ static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t dat
 	asm("1:");
 }
 
+int swdptap_seq_out_8bits_read_ack(uint32_t data) __attribute__((naked));
 int swdptap_seq_out_8bits_read_ack(uint32_t data)
 {
+
+#if 1
+#define SWCLK_PULSE_ASM		asm("str	r4,	[r3]"); 	asm("str	r5,	[r3]");
+#define SHIFT_BIT_OUT_ASM	asm("lsrs	r6,	r6,	#1");\
+				asm("ite	cs");\
+				asm("strcs	r1,	[r0]");\
+				asm("strcc	r2,	[r0]");
+
+	asm("push	{ r4, r5, r6, lr }");
+	asm("mov	r6,	r0");
+	asm("mov	r0,	#0");
+	asm("bl		swdptap_turnaround");
+	asm("ldr	r0, 	= sw_driving_data");
+	asm("ldmia	r0,	{ r0, r1, r2, r3, r4, r5 }");
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+
+#undef SWCLK_PULSE_ASM
+#undef SHIFT_BIT_OUT_ASM
+
+#define SWCLK_PULSE_ASM		asm("str	r5,	[r4]"); 	asm("str	r6,	[r4]");
+#define SHIFT_ACK_BIT_IN_ASM	asm("ldr	r1,	[r2]");\
+				asm("tst	r1,	r3");\
+				asm("it		ne");
+
+	asm("mov	r0,	#1");
+	asm("bl		swdptap_turnaround");
+	asm("mov	r0,	#0");
+	asm("ldr	r1, 	= sw_sampling_data");
+	asm("ldmia	r1,	{ r2, r3, r4, r5, r6 }");
+
+	SHIFT_ACK_BIT_IN_ASM
+	asm("orrne	r0,	#1");
+	SWCLK_PULSE_ASM
+	SHIFT_ACK_BIT_IN_ASM
+	asm("orrne	r0,	#2");
+	SWCLK_PULSE_ASM
+	SHIFT_ACK_BIT_IN_ASM
+	asm("orrne	r0,	#4");
+	SWCLK_PULSE_ASM
+
+	asm("pop	{ r4, r5, r6, pc }");
+
+#undef SWCLK_PULSE_ASM
+#undef SHIFT_ACK_BIT_IN_ASM
+#else
 	counters.seq_out ++;
 	swdptap_turnaround(0);
 	int ticks = 8;
@@ -337,6 +392,7 @@ int swdptap_seq_out_8bits_read_ack(uint32_t data)
 		ack |= 4;
 	SWCLK_PULSE
 	return ack;
+#endif
 }
 
 void swdptap_seq_out(uint32_t MS, int ticks)
