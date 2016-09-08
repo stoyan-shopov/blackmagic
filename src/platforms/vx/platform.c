@@ -301,16 +301,53 @@ bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t data) __attribute__((naked));
 static void swdptap_seq_out_32bits_asm(struct sw_driving_data * sw, uint32_t data)
 {
+#define SWCLK_PULSE_ASM		asm("str	r4,	[r3]"); 	asm("str	r5,	[r3]");
+#define SHIFT_BIT_OUT_ASM	asm("lsrs	r6,	r6,	#1");\
+				asm("ite	cs");\
+				asm("strcs	r1,	[r0]");\
+				asm("strcc	r2,	[r0]");
+	
 	asm("push	{ r4, r5, r6, lr }");
 	asm("mov	r6,	r1");
 	asm("ldmia	r0,	{ r0, r1, r2, r3, r4, r5 }");
+	
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+	SHIFT_BIT_OUT_ASM SWCLK_PULSE_ASM
+ 
+	asm("pop	{ r4, r5, r6, pc }");
 
-	/* drive data */
-	asm("lsr	r6,	r6,	#1");
-	asm("str	r1,	[r0]");
-	asm("bcs	1f");
-	asm("str	r2,	[r0]");
-	asm("1:");
+#undef SWCLK_PULSE_ASM			
+#undef SHIFT_BIT_OUT_ASM	
 }
 
 int swdptap_seq_out_8bits_read_ack(uint32_t data) __attribute__((naked));
@@ -399,14 +436,20 @@ void swdptap_seq_out(uint32_t MS, int ticks)
 {
 	counters.seq_out ++;
 	swdptap_turnaround(0);
-
-	while (ticks--) {
-		if (MS & 1)
-			SWDIO_HI
-		else
-			SWDIO_LOW
-		SWCLK_PULSE
-		MS >>= 1;
+	if (ticks == 32)
+	{
+		swdptap_seq_out_32bits_asm(& sw_driving_data, MS);
+	}
+	else
+	{
+		while (ticks--) {
+			if (MS & 1)
+				SWDIO_HI
+			else
+				SWDIO_LOW
+			SWCLK_PULSE
+			MS >>= 1;
+		}
 	}
 }
 
