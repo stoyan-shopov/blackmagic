@@ -557,12 +557,12 @@ adiv5_mem_write(ADIv5_AP_t *ap, uint32_t dest, const void *src, size_t len)
 		}
 		src = (uint8_t *)src + (1 << align);
 		dest += (1 << align);
-		adiv5_dp_low_access(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DRW, tmp);
+		adiv5_dp_low_access_fast(ap->dp, ADIV5_LOW_WRITE, ADIV5_AP_DRW, tmp);
 
 		/* Check for 10 bit address overflow */
 		if ((dest ^ odest) & 0xfffffc00) {
 			odest = dest;
-			adiv5_dp_low_access(ap->dp,
+			adiv5_dp_low_access_fast(ap->dp,
 					ADIV5_LOW_WRITE, ADIV5_AP_TAR, dest);
 		}
 	}
