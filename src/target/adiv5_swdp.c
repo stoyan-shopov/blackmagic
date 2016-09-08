@@ -194,27 +194,34 @@ extern int swdptap_seq_out_8bits_read_ack(uint32_t data);
 	platform_timeout_set(&timeout, 2000);
 	do {
 		ack = swdptap_seq_out_8bits_read_ack(request);
-	} while (!platform_timeout_is_expired(&timeout) && ack == SWDP_ACK_WAIT);
+	} while (ack == SWDP_ACK_WAIT && !platform_timeout_is_expired(&timeout));
 
-	if (ack == SWDP_ACK_WAIT)
-		raise_exception(EXCEPTION_TIMEOUT, "SWDP ACK timeout");
+	if (ack == SWDP_ACK_OK)
+	{
+		if(RnW) {
+			if(swdptap_seq_in_parity(&response, 32))  /* Give up on parity error */
+				raise_exception(EXCEPTION_ERROR, "SWDP Parity error");
+		} else {
+			swdptap_seq_out_parity(value, 32);
+		}
 
-	if(ack == SWDP_ACK_FAULT) {
-		dp->fault = 1;
-		return 0;
+		return response;
+	}
+	else
+	{
+
+		if (ack == SWDP_ACK_WAIT)
+			raise_exception(EXCEPTION_TIMEOUT, "SWDP ACK timeout");
+
+		if(ack == SWDP_ACK_FAULT) {
+			dp->fault = 1;
+			return 0;
+		}
+
+		if(ack != SWDP_ACK_OK)
+			raise_exception(EXCEPTION_ERROR, "SWDP invalid ACK");
 	}
 
-	if(ack != SWDP_ACK_OK)
-		raise_exception(EXCEPTION_ERROR, "SWDP invalid ACK");
-
-	if(RnW) {
-		if(swdptap_seq_in_parity(&response, 32))  /* Give up on parity error */
-			raise_exception(EXCEPTION_ERROR, "SWDP Parity error");
-	} else {
-		swdptap_seq_out_parity(value, 32);
-	}
-
-	return response;
 }
 
 static void adiv5_swdp_abort(ADIv5_DP_t *dp, uint32_t abort)
