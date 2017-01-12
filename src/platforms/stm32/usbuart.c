@@ -249,6 +249,7 @@ void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)
  * Allowed to read from FIFO out pointer, but not write to it.
  * Allowed to write to FIFO in pointer.
  */
+#if 0
 void USBUSART_ISR(void)
 {
 #if XXX
@@ -279,6 +280,7 @@ void USBUSART_ISR(void)
 	}
 #endif
 }
+#endif
 
 void USBUSART_TIM_ISR(void)
 {

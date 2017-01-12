@@ -14,7 +14,7 @@ OPT_FLAGS ?= -O2
 #$(OPT_FLAGS) -std=gnu99 -ggdb3 -g3 -gdwarf-4 -fvar-tracking-assignments -fvar-tracking -fdebug-types-section -feliminate-dwarf2-dups -MD \
 #-I. -Iinclude -Iplatforms/common -I$(PLATFORM_DIR)
 CFLAGS += -Wall -Wextra -Wno-char-subscripts\
-	$(OPT_FLAGS) -std=gnu99 -g3 -MD \
+	$(OPT_FLAGS) -std=gnu99 -gdwarf-4 -fvar-tracking-assignments -fvar-tracking -MD \
 	-I. -Iinclude -Iplatforms/common -I$(PLATFORM_DIR) \
 	-I./sforth/
 LDFLAGS += $(OPT_FLAGS)
