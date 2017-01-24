@@ -76,10 +76,18 @@ void usart2_isr(void)
 	usart_data.index &= sizeof usart_data.data - 1;
 }
 
-void do_usart_emit(void)
+static void do_usart_emit(void)
 {
 	while (!(USART2_ISR & USART_ISR_TXE));
 	USART2_TDR = sf_pop();
+}
+
+static void do_usart_send(void)
+{
+cell count = sf_pop();
+const char * data = sf_pop();
+	while (count --)
+		sf_push(* data ++), do_usart_emit();
 }
 
 static struct word dict_base_dummy_word[1] = { MKWORD(0, 0, "", 0), };
@@ -89,6 +97,7 @@ static const struct word custom_dict[] = {
 	MKWORD(custom_dict,		__COUNTER__,	"gcd",	do_gcd),
 	MKWORD(custom_dict,		__COUNTER__,	"init-usart",	usbuart_init),
 	MKWORD(custom_dict,		__COUNTER__,	"usart-emit",	do_usart_emit),
+	MKWORD(custom_dict,		__COUNTER__,	"usart-send",	do_usart_send),
 
 }, * custom_dict_start = custom_dict + __COUNTER__;
 
