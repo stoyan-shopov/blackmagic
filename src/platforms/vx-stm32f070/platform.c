@@ -49,30 +49,6 @@ static bool platform_sforth_entry_requested(void)
 static bool sforth_mode_active;
 bool is_sforth_mode_active(void) { return sforth_mode_active; }
 
-static void rcc_clock_setup_in_hse_8mhz_out_48mhz(void)
-{
-	rcc_osc_on(RCC_HSE);
-	rcc_wait_for_osc_ready(RCC_HSE);
-	rcc_set_sysclk_source(RCC_HSE);
-
-	rcc_set_hpre(RCC_CFGR_HPRE_NODIV);
-	rcc_set_ppre(RCC_CFGR_PPRE_NODIV);
-
-	flash_set_ws(FLASH_ACR_LATENCY_024_048MHZ);
-
-	/* 8MHz * 12 / 2 = 48MHz */
-	rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_MUL12);
-
-	RCC_CFGR &= ~RCC_CFGR_PLLSRC;
-
-	rcc_osc_on(RCC_PLL);
-	rcc_wait_for_osc_ready(RCC_PLL);
-	rcc_set_sysclk_source(RCC_PLL);
-
-	rcc_apb1_frequency = 48000000;
-	rcc_ahb_frequency = 48000000;
-}
-
 void platform_init(void)
 {
 	rcc_set_usbclk_source(RCC_PLL);
