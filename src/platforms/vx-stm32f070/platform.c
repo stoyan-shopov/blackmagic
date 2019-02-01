@@ -49,10 +49,23 @@ static bool platform_sforth_entry_requested(void)
 static bool sforth_mode_active;
 bool is_sforth_mode_active(void) { return sforth_mode_active; }
 
+enum
+{
+	USB_CONNECT_PORT	= GPIOA,
+	USB_CONNECT_PIN		= GPIO8,
+};
+
 void platform_init(void)
 {
+	/* hardware init for the vx-probe-blackmagic-v2 board */
+	rcc_periph_clock_enable(RCC_GPIOA);
+
+	gpio_mode_setup(USB_CONNECT_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, USB_CONNECT_PIN);
+	gpio_set_output_options(USB_CONNECT_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_HIGH, USB_CONNECT_PIN);
+
 	rcc_set_usbclk_source(RCC_PLL);
 	rcc_clock_setup_in_hse_8mhz_out_48mhz();
+	gpio_set(USB_CONNECT_PORT, USB_CONNECT_PIN);
 
 	/* Enable peripherals */
 	rcc_periph_clock_enable(RCC_USB);

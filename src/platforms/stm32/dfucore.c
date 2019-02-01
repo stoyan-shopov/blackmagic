@@ -329,6 +329,7 @@ static void set_dfu_iface_string(uint32_t size)
 
 static char *get_dev_unique_id(char *s)
 {
+#if 0
 #if defined(STM32F4) || defined(STM32F2)
 #	define UNIQUE_SERIAL_R 0x1FFF7A10
 #	define FLASH_SIZE_R    0x1fff7A22
@@ -372,4 +373,5 @@ static char *get_dev_unique_id(char *s)
 	s[8] = 0;
 
 	return s;
+#endif
 }
