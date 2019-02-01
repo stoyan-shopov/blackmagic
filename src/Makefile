@@ -11,7 +11,7 @@ endif
 #CFLAGS += -Wall -Wextra -Wno-char-subscripts\
 #$(OPT_FLAGS) -std=gnu99 -ggdb3 -g3 -gdwarf-4 -fvar-tracking-assignments -fvar-tracking -fdebug-types-section -feliminate-dwarf2-dups -MD \
 #-I. -Iinclude -Iplatforms/common -I$(PLATFORM_DIR)
-CFLAGS += -Wall -Wextra -Wno-char-subscripts\
+CFLAGS += -Wall -Wextra -Wno-char-subscripts -Wno-cast-function-type \
 	$(OPT_FLAGS) -std=gnu99 -g3 -MD \
 	-I. -Iinclude -Iplatforms/common -I$(PLATFORM_DIR) \
 	-I./sforth/
@@ -46,11 +46,13 @@ SRC =			\
 	lmi.c		\
 	lpc_common.c	\
 	lpc11xx.c	\
+	lpc17xx.c	\
 	lpc15xx.c	\
 	lpc43xx.c	\
 	kinetis.c	\
 	main.c		\
 	morse.c		\
+	msp432.c	\
 	nrf51.c		\
 	platform.c	\
 	sam3x.c		\
@@ -58,6 +60,7 @@ SRC =			\
 	samd.c		\
 	stm32f1.c	\
 	stm32f4.c	\
+	stm32h7.c	\
 	stm32l0.c	\
 	stm32l4.c	\
 	swdptap.c	\
@@ -101,7 +104,7 @@ clean:	host_clean
 	$(Q)echo "  CLEAN"
 	-$(Q)$(RM) -f ./sforth/*.o ./sforth/*.d ./sforth/*~
 	-$(Q)$(RM) -f *.o *.d *~ blackmagic $(HOSTFILES)
-	-$(Q)$(RM) -f platforms/*/*.o platforms/*/*.d mapfile
+	-$(Q)$(RM) -f platforms/*/*.o platforms/*/*.d mapfile include/version.h
 
 all_platforms:
 	$(Q)set -e ;\
@@ -123,6 +126,7 @@ all_platforms:
 	echo "</ul></body></html>" >> artifacts/index.html ;\
 	cp artifacts/*.bin artifacts/$(shell git describe --always)
 
+command.c: include/version.h
 
 include/version.h: FORCE
 	$(Q)echo "  GIT     include/version.h"

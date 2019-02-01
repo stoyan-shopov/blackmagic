@@ -20,6 +20,10 @@
 #include "general.h"
 #include "swdptap.h"
 
+
+
+uint32_t swdptap_seq_in(int ticks) __attribute__((weak));
+
 uint32_t __attribute__((weak))
 swdptap_seq_in(int ticks)
 {
@@ -34,6 +38,10 @@ swdptap_seq_in(int ticks)
 
 	return ret;
 }
+
+
+bool swdptap_seq_in_parity(uint32_t *ret, int ticks)  __attribute__((weak));
+
 
 bool __attribute__((weak))
 swdptap_seq_in_parity(uint32_t *ret, int ticks)

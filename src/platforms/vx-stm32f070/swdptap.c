@@ -1,7 +1,7 @@
 /*
  * This file is part of the Black Magic Debug project.
  *
- * Copyright (C) 2015  Black Sphere Technologies Ltd.
+ * Copyright (C) 2011  Black Sphere Technologies Ltd.
  * Written by Gareth McMullin <gareth@blacksphere.co.nz>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -17,24 +17,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include "libopencm3/stm32/flash.h"
-#include "stub.h"
 
-#define SR_ERROR_MASK 0x14
+/* This file implements the SW-DP interface. */
 
-void __attribute__((naked))
-stm32f1_flash_write_stub(uint16_t *dest, uint16_t *src, uint32_t size)
+
+/* Dummy file */
+int swdptap_init(void)
 {
-	for (int i; i < size; i += 2) {
-		FLASH_CR = FLASH_CR_PG;
-		*dest++ = *src++;
-		while (FLASH_SR & FLASH_SR_BSY)
-			;
-	}
-
-	if (FLASH_SR & SR_ERROR_MASK)
-		stub_exit(1);
-
-	stub_exit(0);
+	return 0;
 }
-

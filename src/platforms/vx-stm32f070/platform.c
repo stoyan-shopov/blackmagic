@@ -49,34 +49,23 @@ static bool platform_sforth_entry_requested(void)
 static bool sforth_mode_active;
 bool is_sforth_mode_active(void) { return sforth_mode_active; }
 
-static void rcc_clock_setup_in_hse_8mhz_out_48mhz(void)
+enum
 {
-	rcc_osc_on(RCC_HSE);
-	rcc_wait_for_osc_ready(RCC_HSE);
-	rcc_set_sysclk_source(RCC_HSE);
-
-	rcc_set_hpre(RCC_CFGR_HPRE_NODIV);
-	rcc_set_ppre(RCC_CFGR_PPRE_NODIV);
-
-	flash_set_ws(FLASH_ACR_LATENCY_024_048MHZ);
-
-	/* 8MHz * 12 / 2 = 48MHz */
-	rcc_set_pll_multiplication_factor(RCC_CFGR_PLLMUL_MUL12);
-
-	RCC_CFGR &= ~RCC_CFGR_PLLSRC;
-
-	rcc_osc_on(RCC_PLL);
-	rcc_wait_for_osc_ready(RCC_PLL);
-	rcc_set_sysclk_source(RCC_PLL);
-
-	rcc_apb1_frequency = 48000000;
-	rcc_ahb_frequency = 48000000;
-}
+	USB_CONNECT_PORT	= GPIOA,
+	USB_CONNECT_PIN		= GPIO8,
+};
 
 void platform_init(void)
 {
+	/* hardware init for the vx-probe-blackmagic-v2 board */
+	rcc_periph_clock_enable(RCC_GPIOA);
+
+	gpio_mode_setup(USB_CONNECT_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, USB_CONNECT_PIN);
+	gpio_set_output_options(USB_CONNECT_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_HIGH, USB_CONNECT_PIN);
+
 	rcc_set_usbclk_source(RCC_PLL);
 	rcc_clock_setup_in_hse_8mhz_out_48mhz();
+	gpio_set(USB_CONNECT_PORT, USB_CONNECT_PIN);
 
 	/* Enable peripherals */
 	rcc_periph_clock_enable(RCC_USB);
