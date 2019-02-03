@@ -5,7 +5,7 @@ ENABLE_DEBUG ?=
 
 ifneq ($(V), 1)
 MAKEFLAGS += --no-print-dir
-Q := @
+Q :=
 endif
 
 #CFLAGS += -Wall -Wextra -Wno-char-subscripts\
@@ -21,9 +21,11 @@ ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
 endif
 
-CFLAGS += -DENGINE_32BIT
-CFLAGS += -DCORE_CELLS_COUNT=256
-CFLAGS += -DSTACK_DEPTH=32
+SFORTH_CFLAGS += -DENGINE_32BIT
+SFORTH_CFLAGS += -DCORE_CELLS_COUNT=256
+SFORTH_CFLAGS += -DSTACK_DEPTH=32
+
+CFLAGS += $(SFORTH_CFLAGS)
 
 SRC =			\
 	adiv5.c		\
@@ -66,25 +68,27 @@ SRC =			\
 	swdptap.c	\
 	swdptap_generic.c	\
 	target.c	\
-	sforth/engine.c	\
-	sforth/sf-arch-default.c	\
-	sforth/sf-opt-string.c	\
-	sforth/sf-opt-prog-tools.c	\
-	sforth/sf-opt-file.c	\
 	blackstrike-dictionary.c	\
 
 include $(PLATFORM_DIR)/Makefile.inc
 
 OBJ = $(SRC:.c=.o)
 
-OBJ += inline.o
+OBJ += inline-test.o
+
+OBJ +=  sforth/sf-arch-default.o	\
+	sforth/sf-opt-string.o	\
+	sforth/sf-opt-prog-tools.o	\
+	sforth/sf-opt-file.o \
+	sforth/engine.o
+
 
 blackmagic: include/version.h $(OBJ)
 	@echo "  LD      $@"
 	$(Q)$(CC) -o $@ $(OBJ) $(LDFLAGS)
 
-inline.o: inline-test.c
-	$(CC) -mthumb -mcpu=cortex-m0 -mfloat-abi=soft -mfix-cortex-m3-ldrd -gdwarf-4 -O3 -finline-functions -fno-common -c $< -o $@
+#inline.o: inline-test.c
+#	$(CC) -mthumb -mcpu=cortex-m0 -mfloat-abi=soft -mfix-cortex-m3-ldrd -gdwarf-4 -O3 -finline-functions -fno-common -c $< -o $@
 
 %.o:	%.c
 	@echo "  CC      $<"

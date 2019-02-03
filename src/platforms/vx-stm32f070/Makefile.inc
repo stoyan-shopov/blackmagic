@@ -2,7 +2,7 @@ CROSS_COMPILE ?= arm-none-eabi-
 CC = $(CROSS_COMPILE)gcc
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
-OPT_FLAGS = -Os -gdwarf-4 -finline-functions -fvar-tracking-assignments -fvar-tracking
+OPT_FLAGS = -finline-functions -fvar-tracking-assignments -fvar-tracking
 
 CFLAGS += -mcpu=cortex-m0 -mthumb \
 	-DSTM32F0 -I../libopencm3/include \

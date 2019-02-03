@@ -27,7 +27,7 @@ THE SOFTWARE.
 
 void do_f_struct_short(void)
 {
-	f_struct_short((struct short_struct) { .a = 2, .b = 6, });
+	f_struct_short((struct short_struct) { .a = 8, .x = 3, .y = 2, .z = 7, .zz = 1, .u.t = 2, .u.r = 5, }, 10., 20., 30., 40., 50.);
 }
 void do_f_struct_longer(void)
 {
@@ -37,7 +37,7 @@ struct longer_struct x = { .a = 2, .b = 6, };
 }
 void do_f_struct_long(void)
 {
-	f_struct_long((struct long_struct) { .a = 2, .b = 6, .c = 10, .d = 20, .e = 30, .f = 40,});
+	f_struct_longest((struct longest_struct) { .a = 2.423, .b = 6.321, .c = 10.56, .d = 20.765, .e = 30.56, .f = 40765.675,}, 1, 2, 3);
 }
 
 static void do_squared(void) { cell x = sf_pop(); sf_push(x * x); }

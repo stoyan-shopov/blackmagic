@@ -453,6 +453,7 @@ void adiv5_dp_init(ADIv5_DP_t *dp)
 		if (ap == NULL)
 			continue;
 
+#if 0
 		extern void kinetis_mdm_probe(ADIv5_AP_t *);
 		kinetis_mdm_probe(ap);
 
@@ -468,7 +469,7 @@ void adiv5_dp_init(ADIv5_DP_t *dp)
 		/* Should probe further here to make sure it's a valid target.
 		 * AP should be unref'd if not valid.
 		 */
-
+#endif
 		/* The rest should only be added after checking ROM table */
 		probed |= adiv5_component_probe(ap, ap->base);
 		if (!probed && (dp->idcode & 0xfff) == 0x477) {
