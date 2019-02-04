@@ -20,3 +20,7 @@ build the test executables.
 Make sure to substitute the directory containing the sources and
 the toolchains as the `x:` drive in windows with the `subst` command
 from above, because the `build-tests.sh` script relies on this!
+
+NOTE: As of 04022018 building all of the test files takes about 3 hours
+(yes, three hours) on a Core2 quad machine with 8 GB RAM in mingw on
+Windows 10. This is slow.
