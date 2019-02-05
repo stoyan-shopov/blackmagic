@@ -1,0 +1,50 @@
+diff --git a/Makefile b/Makefile
+index d0f95323..a978c6d6 100644
+--- a/Makefile
++++ b/Makefile
+@@ -27,15 +27,7 @@ space:=
+ space+=
+ SRCLIBDIR:= $(subst $(space),\$(space),$(realpath lib))
+ 
+-TARGETS ?=	stm32/f0 stm32/f1 stm32/f2 stm32/f3 stm32/f4 stm32/f7 \
+-		stm32/l0 stm32/l1 stm32/l4 \
+-		lpc13xx lpc17xx lpc43xx/m4 lpc43xx/m0 \
+-		lm3s lm4f msp432/e4 \
+-		efm32/tg efm32/g efm32/lg efm32/gg efm32/hg efm32/wg \
+-		efm32/ezr32wg \
+-		sam/3a sam/3n sam/3s sam/3u sam/3x sam/4l \
+-		sam/d \
+-		vf6xx
++TARGETS ?=	stm32/f0
+ 
+ # Be silent per default, but 'make V=1' will show all compiler calls.
+ ifneq ($(V),1)
+diff --git a/lib/Makefile.include b/lib/Makefile.include
+index 9caf3ee3..b2ed5e27 100644
+--- a/lib/Makefile.include
++++ b/lib/Makefile.include
+@@ -27,7 +27,6 @@ endif
+ OBJS += vector.o systick.o scb.o nvic.o assert.o sync.o dwt.o
+ 
+ # Slightly bigger .elf files but gains the ability to decode macros
+-DEBUG_FLAGS ?= -ggdb3
+ STANDARD_FLAGS ?= -std=c99
+ 
+ all: $(SRCLIBDIR)/$(LIBNAME).a
+diff --git a/lib/stm32/f0/Makefile b/lib/stm32/f0/Makefile
+index a5883643..649a9528 100644
+--- a/lib/stm32/f0/Makefile
++++ b/lib/stm32/f0/Makefile
+@@ -22,10 +22,9 @@ SRCLIBDIR	?= ../..
+ 
+ PREFIX		?= arm-none-eabi
+ #PREFIX		?= arm-elf
+-CC		= $(PREFIX)-gcc
++CC		= clang -target $(PREFIX)
+ AR		= $(PREFIX)-ar
+-TGT_CFLAGS	= -Os \
+-		  -Wall -Wextra -Wimplicit-function-declaration \
++TGT_CFLAGS	= -Wall -Wextra -Wimplicit-function-declaration \
+ 		  -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes \
+ 		  -Wundef -Wshadow \
+ 		  -I../../../include -fno-common \

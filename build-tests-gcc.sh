@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Make sure to read the notes in file `README-BUILDING-TESTS.md`
+# Make sure to read the notes in file `README-BUILDING-GCC-TESTS.md`
 
 SAVED_PATH=$PATH
 

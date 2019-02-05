@@ -1,0 +1,103 @@
+diff --git a/src/Makefile b/src/Makefile
+index b85ac9ae..19fb8bb6 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -83,9 +83,10 @@ OBJ +=  sforth/sf-arch-default.o	\
+ 	sforth/engine.o
+ 
+ 
++# Force using the gcc toolchain linker
+ blackmagic: include/version.h $(OBJ)
+ 	@echo "  LD      $@"
+-	$(Q)$(CC) -o $@ $(OBJ) $(LDFLAGS)
++	$(Q)arm-none-eabi-gcc -o $@ $(OBJ) $(LDFLAGS)
+ 
+ #inline.o: inline-test.c
+ #	$(CC) -mthumb -mcpu=cortex-m0 -mfloat-abi=soft -mfix-cortex-m3-ldrd -gdwarf-4 -O3 -finline-functions -fno-common -c $< -o $@
+diff --git a/src/platforms/vx-stm32f070/Makefile.inc b/src/platforms/vx-stm32f070/Makefile.inc
+index c0bd8da2..db48fa80 100644
+--- a/src/platforms/vx-stm32f070/Makefile.inc
++++ b/src/platforms/vx-stm32f070/Makefile.inc
+@@ -1,8 +1,8 @@
+ CROSS_COMPILE ?= arm-none-eabi-
+-CC = $(CROSS_COMPILE)gcc
++CC = clang -target arm-none-eabi
+ OBJCOPY = $(CROSS_COMPILE)objcopy
+ 
+-OPT_FLAGS = -finline-functions -fvar-tracking-assignments -fvar-tracking
++OPT_FLAGS = -finline-functions
+ 
+ CFLAGS += -mcpu=cortex-m0 -mthumb \
+ 	-DSTM32F0 -I../libopencm3/include \
+@@ -22,15 +22,7 @@ SRC += 	cdcacm.c	\
+ 	timing.c	\
+ 	timing_stm32.c	\
+ 
+-all:	blackmagic.bin blackmagic_dfu.bin blackmagic_dfu.hex dfu_upgrade.bin dfu_upgrade.hex
+-
+-blackmagic_dfu: usbdfu.o dfucore.o dfu_f1.o
+-	@echo "  LD      $@"
+-	$(Q)$(CC) $^ -o $@ $(LDFLAGS_BOOT)
+-
+-dfu_upgrade: dfu_upgrade.o dfucore.o dfu_f1.o
+-	@echo "  LD      $@"
+-	$(Q)$(CC) $^ -o $@ $(LDFLAGS)
++all:	blackmagic.bin
+ 
+ host_clean:
+ 	-$(Q)$(RM) blackmagic.bin blackmagic_dfu blackmagic_dfu.bin blackmagic_dfu.hex dfu_upgrade dfu_upgrade.bin dfu_upgrade.hex
+diff --git a/src/platforms/vx-stm32f070/platform.c b/src/platforms/vx-stm32f070/platform.c
+index 9f8eca63..0ea99c8e 100644
+--- a/src/platforms/vx-stm32f070/platform.c
++++ b/src/platforms/vx-stm32f070/platform.c
+@@ -275,6 +275,7 @@ void sv_call_handler(void)
+ }
+ 
+ 
++#if 0
+ static uint32_t swdptap_seq_in_32bits_optimized_asm(struct sw_driving_data * sw) __attribute__((naked));
+ static uint32_t swdptap_seq_in_32bits_optimized_asm(struct sw_driving_data * sw)
+ {
+@@ -640,12 +641,13 @@ static uint32_t swdptap_seq_in_32bits_optimized_asm(struct sw_driving_data * sw)
+ 	asm("mov	r0,	r6");
+ 	asm("pop	{ r4, r5, r6, r7, pc }");
+ }
++#endif
+ 
+ bool swdptap_seq_in_parity_32bits_optimized(uint32_t * ret)
+ {
+ uint32_t x = 0, cnt = 1;
+ 		swdptap_turnaround(1);
+-#if 1
++#if 0
+ 		x = swdptap_seq_in_32bits_optimized_asm(& vx_sw_driving_data);
+ #else
+ 		x |= SWDIO_READ_MSB; SWCLK_PULSE x >>= 1;
+@@ -723,6 +725,7 @@ uint32_t x;
+ 	}
+ }
+ 
++#if 0
+ static void swdptap_seq_out_32bits_optimized_asm(struct sw_driving_data * sw, uint32_t data) __attribute__((naked));
+ static void swdptap_seq_out_32bits_optimized_asm(struct sw_driving_data * sw, uint32_t data)
+ {
+@@ -1021,6 +1024,7 @@ static void swdptap_seq_out_32bits_optimized_asm(struct sw_driving_data * sw, ui
+ 
+ 	asm("pop	{ r4, r5, r6, pc }");
+ }
++#endif
+ 
+ 
+ void swdptap_seq_out_32bits_optimized(uint32_t x)
+@@ -1038,9 +1042,11 @@ int i = 32;
+ void swdptap_seq_out(uint32_t MS, int ticks)
+ {
+ 	swdptap_turnaround(0);
++#if 0
+ 	if (ticks == 32)
+ 		swdptap_seq_out_32bits_optimized_asm(& vx_sw_driving_data, MS);
+ 	else
++#endif
+ 	{
+ 		counters.seq_out ++;
+ 
