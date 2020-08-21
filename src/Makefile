@@ -1,4 +1,4 @@
-PROBE_HOST ?= native
+PROBE_HOST ?= stlinkv3-mini
 PLATFORM_DIR = platforms/$(PROBE_HOST)
 VPATH += $(PLATFORM_DIR) target
 ENABLE_DEBUG ?=

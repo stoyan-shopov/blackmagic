@@ -43,12 +43,12 @@ int usbuart_debug_write(const char *buf, size_t len);
 
 /* Hardware definitions... */
 #define TDI_PORT	GPIOA
-#define TMS_PORT	GPIOB
-#define TCK_PORT	GPIOA
+#define TMS_PORT	GPIOF
+#define TCK_PORT	GPIOB
 #define TDO_PORT	GPIOA
 #define TDI_PIN		GPIO7
-#define TMS_PIN		GPIO14
-#define TCK_PIN		GPIO5
+#define TMS_PIN		GPIO9
+#define TCK_PIN		GPIO2
 #define TDO_PIN		GPIO6
 
 #define SWDIO_PORT 	TMS_PORT
@@ -61,7 +61,7 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define SRST_PIN_V2	GPIO0
 
 #define LED_PORT	GPIOA
-/* Use PC14 for a "dummy" uart led. So we can observere at least with scope*/
+/* Use PC14 for a "dummy" uart led. So we can observe at least with scope*/
 #define LED_PORT_UART	GPIOC
 #define LED_UART	GPIO14
 
@@ -69,12 +69,15 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define NUM_TRACE_PACKETS		(128)		/* This is an 8K buffer */
 #define TRACESWO_PROTOCOL		2			/* 1 = Manchester, 2 = NRZ / async */
 
-# define SWD_CR   GPIO_CRH(SWDIO_PORT)
-# define SWD_CR_MULT (1 << ((14 - 8) << 2))
+//# define SWD_CR   GPIO_CRH(SWDIO_PORT)
+//# define SWD_CR_MULT (1 << ((14 - 8) << 2))
 
-#define TMS_SET_MODE()
-#define SWDIO_MODE_FLOAT()	{}
-#define SWDIO_MODE_DRIVE()	{}
+#define SWDIO_MODE_FLOAT()	do { gpio_mode_setup(SWDIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SWDIO_PIN); } while (0)
+#define SWDIO_MODE_DRIVE()	do {\
+	gpio_mode_setup(SWDIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SWDIO_PIN);\
+	gpio_set_output_options(SWDIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SWDIO_PIN);\
+} while (0)
+#define TMS_SET_MODE()		SWDIO_MODE_DRIVE()
 #define UART_PIN_SETUP() /* TODO: write this. */
 
 #define USB_DRIVER      stm32f723_usb_driver
