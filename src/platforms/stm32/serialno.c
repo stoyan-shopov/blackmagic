@@ -21,9 +21,13 @@
 
 char *serialno_read(char *s)
 {
-#if defined(STM32L0) || defined(STM32F3) || defined(STM32F4)
+#if defined(STM32L0) || defined(STM32F3) || defined(STM32F4) || defined(STM32F7)
+# if defined(STM32L0) || defined(STM32F3) || defined(STM32F4)
 	volatile uint16_t *uid = (volatile uint16_t *)DESIG_UNIQUE_ID_BASE;
-# if defined(STM32F4)
+# elif defined(STM32F7)
+	volatile uint16_t *uid = (volatile uint16_t *)DESIG_UNIQUE_ID_BASE_452;
+# endif
+# if defined(STM32F4) || defined(STM32F7)
 	int offset = 3;
 # elif defined(STM32L0) || defined(STM32F4)
 	int offset = 5;
