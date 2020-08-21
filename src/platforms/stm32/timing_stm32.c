@@ -85,7 +85,7 @@ void platform_max_frequency_set(uint32_t freq)
 			(unsigned int) divisor)
 			swd_delay_cnt++;
 	}
-#if defined(STM32F7)
+#if defined(STM32F7) && defined(PIN_MODE_FAST) && defined(PIN_MODE_NORMAL)
 	if (swd_delay_cnt < 2)
 		PIN_MODE_FAST();
 	else

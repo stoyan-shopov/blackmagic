@@ -203,11 +203,11 @@ if __name__ == "__main__":
 
 	bin = file.read()
 
-	product = dfudev.handle.getString(dfudev.dev.iProduct, 64)
+	product = dfudev.handle.getString(dfudev.dev.iProduct, 64).decode('utf8')
 	if args.address :
 		start = int(args.address, 0)
 	else :
-		if b"F4" in product:
+		if "F4" in product or "STLINK-V3" in product:
 			start = 0x8004000
 		else:
 			start = 0x8002000
