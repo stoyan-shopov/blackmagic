@@ -382,10 +382,16 @@ static const struct usb_config_descriptor config = {
 	.bLength = USB_DT_CONFIGURATION_SIZE,
 	.bDescriptorType = USB_DT_CONFIGURATION,
 	.wTotalLength = 0,
+	/* HACK - demote the BMP usb interfaces to just the gdb (usb serial port) interface.
+	 * This is being done for the purposes of debugging the BMP for the
+	 * stlinkv3-mini target. When debugging is done, this will go away. */
+	.bNumInterfaces = 2,
+#if 0
 #if defined(PLATFORM_HAS_TRACESWO)
 	.bNumInterfaces = 6,
 #else
 	.bNumInterfaces = 5,
+#endif
 #endif
 	.bConfigurationValue = 1,
 	.iConfiguration = 0,
