@@ -117,6 +117,27 @@ void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 #include "engine.h"
 #include "sf-arch.h"
 
+#include "sf-word-wizard.h"
+
+static void do_stlinkv3_mini_help(void)
+{ print_str("stlinkv3-mini support for the blackmagic debug probe\n\n"); }
+
+static void do_help(void)
+{ print_str("TODO: help is not available at this moment; please, provide help here\n"); }
+
+static struct word dict_base_dummy_word[1] = { MKWORD(0, 0, "", 0), };
+static const struct word custom_dict[] = {
+	MKWORD(dict_base_dummy_word,	0,		"stlinkv3-mini-help",	do_stlinkv3_mini_help),
+	MKWORD(custom_dict,		__COUNTER__,	"help",	do_help),
+
+}, * custom_dict_start = custom_dict + __COUNTER__;
+
+static void sf_stlinkv3_mini_dictionary(void) __attribute__((constructor));
+static void sf_stlinkv3_mini_dictionary(void)
+{
+	sf_merge_custom_dictionary(dict_base_dummy_word, custom_dict_start);
+}
+
 int sfgetc(void)
 {
 	return gdb_if_getchar();
