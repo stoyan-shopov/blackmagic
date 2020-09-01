@@ -30,6 +30,10 @@
 #include "gdb_packet.h"
 #include "morse.h"
 
+#if RUN_SFORTH == 1
+#include "engine.h"
+#endif
+
 int
 main(int argc, char **argv)
 {
@@ -41,6 +45,13 @@ main(int argc, char **argv)
 	platform_init();
 #endif
 
+#if RUN_SFORTH == 1
+	sf_init();
+	sf_eval("true cr-echo !");
+	while (true) {
+		do_quit();
+	}
+#else
 	while (true) {
 		volatile struct exception e;
 		TRY_CATCH(e, EXCEPTION_ALL) {
@@ -52,6 +63,7 @@ main(int argc, char **argv)
 			morse("TARGET LOST.", 1);
 		}
 	}
+#endif
 
 	/* Should never get here */
 	return 0;

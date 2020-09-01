@@ -1,6 +1,14 @@
 PROBE_HOST ?= stlinkv3-mini
 PLATFORM_DIR = platforms/$(PROBE_HOST)
 VPATH += $(PLATFORM_DIR) target
+
+VPATH += sforth
+# sforth engine stack depth, in words
+STACK_DEPTH ?= 32
+# sforth engine core size, in words
+CORE_CELLS_COUNT ?= 4 * 1024
+RUN_SFORTH ?= 1
+
 ENABLE_DEBUG ?=
 
 ifneq ($(V), 1)
@@ -8,9 +16,13 @@ MAKEFLAGS += --no-print-dir
 Q := @
 endif
 
-CFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
+CFLAGS += -Wall -Wextra -Wno-char-subscripts \
 	-std=gnu99 -g3 -MD -I./target \
-	-I. -Iinclude -I$(PLATFORM_DIR)
+	-I. -Iinclude -I$(PLATFORM_DIR) \
+	-Isforth \
+	 -DSTACK_DEPTH="$(STACK_DEPTH)" \
+	 -DCORE_CELLS_COUNT="$(CORE_CELLS_COUNT)" \
+	 -DRUN_SFORTH="$(RUN_SFORTH)" \
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
@@ -58,6 +70,9 @@ SRC =			\
 	stm32l0.c	\
 	stm32l4.c	\
 	target.c	\
+	engine.c	\
+	sf-arch-default.c	\
+	sf-opt-sample.c	\
 
 include $(PLATFORM_DIR)/Makefile.inc
 
