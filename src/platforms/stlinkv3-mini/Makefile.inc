@@ -9,7 +9,7 @@ CFLAGS += -mcpu=cortex-m7 -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard \
 	-I platforms/stm32
 LDFLAGS_BOOT := $(LDFLAGS) -mfpu=fpv5-sp-d16 -mfloat-abi=hard \
 	--specs=nano.specs -lopencm3_stm32f7 \
-	-Wl,-T,platforms/stm32/stlink.ld -nostartfiles -lc \
+	-Wl,-T,platforms/stlinkv3-mini/stlinkv3-mini.ld -nostartfiles -lc \
 	-Wl,-Map=mapfile -mthumb -mcpu=cortex-m7 -Wl,-gc-sections \
 	-L../libopencm3/lib
 ifeq ($(ST_BOOTLOADER), 1)

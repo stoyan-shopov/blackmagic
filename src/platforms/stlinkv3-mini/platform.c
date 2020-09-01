@@ -25,6 +25,7 @@
 #include "general.h"
 #include "cdcacm.h"
 #include "usbuart.h"
+#include "gdb_if.h"
 
 #include <libopencm3/stm32/rcc.h>
 #include <libopencm3/cm3/scb.h>
@@ -112,3 +113,18 @@ void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
 }
 
 
+#if RUN_SFORTH == 1
+#include "engine.h"
+#include "sf-arch.h"
+
+int sfgetc(void)
+{
+	return gdb_if_getchar();
+}
+int sfputc(int c)
+{
+	gdb_if_putchar(c, c == '\n' || c == '\r');
+	return 1;
+}
+
+#endif
