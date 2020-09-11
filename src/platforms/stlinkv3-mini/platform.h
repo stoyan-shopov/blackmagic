@@ -65,6 +65,18 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define SRST_PIN_V1	GPIO1
 #define SRST_PIN_V2	GPIO0
 
+/* SPI5 pins on the stlinkv3-mini. */
+#define STLINKV3_MINI_SPI		SPI5
+/* Alternate function number for the spi pins. */
+#define STLINKV3_MINI_SPI_AF_NUMBER	GPIO_AF5
+
+#define	STLINKV3_MINI_SPI_MOSI_PORT	GPIOF
+#define	STLINKV3_MINI_SPI_MOSI_PIN	GPIO9
+#define	STLINKV3_MINI_SPI_MISO_PORT	GPIOH
+#define	STLINKV3_MINI_SPI_MISO_PIN	GPIO7
+#define	STLINKV3_MINI_SPI_SCK_PORT	GPIOH
+#define	STLINKV3_MINI_SPI_SCK_PIN	GPIO6
+
 #define LED_PORT	GPIOA
 /* Use PC14 for a "dummy" uart led. So we can observe at least with scope*/
 #define LED_PORT_UART	GPIOC
