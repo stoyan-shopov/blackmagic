@@ -34,6 +34,7 @@
 #include <libopencm3/stm32/usart.h>
 #include <libopencm3/usb/usbd.h>
 #include <libopencm3/stm32/adc.h>
+#include <libopencm3/stm32/spi.h>
 
 uint16_t led_idle_run;
 uint16_t srst_pin;
@@ -51,9 +52,10 @@ void platform_init(void)
 	rcc_clock_setup_hse(rcc_3v3 + RCC_CLOCK_3V3_216MHZ, 25000000);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	rcc_periph_clock_enable(RCC_GPIOH);
+	rcc_periph_clock_enable(RCC_GPIOF);
+#if RUN_SFORTH == 0
 
 	/* Configure swd pins */
-	rcc_periph_clock_enable(RCC_GPIOF);
 	gpio_mode_setup(SWDIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SWDIO_PIN);
 	gpio_set_output_options(SWDIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SWDIO_PIN);
 	//gpio_set_af(GPIOB, GPIO_AF12, GPIO14 | GPIO15);
@@ -65,7 +67,65 @@ void platform_init(void)
 	gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO0);
 	GPIOB_BSRR = 1 << 0;
+#else
+	rcc_periph_clock_enable(RCC_SPI5);
+	/* Configure spi pins. */
+	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
 
+	gpio_mode_setup(STLINKV3_MINI_SPI_MISO_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MISO_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MISO_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MISO_PIN);
+
+	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
+
+	/* Set spi port. */
+	spi_init_master(STLINKV3_MINI_SPI, SPI_CR1_BAUDRATE_FPCLK_DIV_4, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
+			SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_LSBFIRST);
+	SPI_CR2(STLINKV3_MINI_SPI) |= /* FRXTH */ 1 << 12;
+	spi_enable(STLINKV3_MINI_SPI);
+#if 0
+void spi_enable(uint32_t spi);
+void spi_disable(uint32_t spi);
+void spi_write(uint32_t spi, uint16_t data);
+void spi_send(uint32_t spi, uint16_t data);
+uint16_t spi_read(uint32_t spi);
+uint16_t spi_xfer(uint32_t spi, uint16_t data);
+void spi_set_bidirectional_mode(uint32_t spi);
+void spi_disable_crc(uint32_t spi);
+void spi_set_full_duplex_mode(uint32_t spi);
+void spi_enable_software_slave_management(uint32_t spi);
+void spi_send_lsb_first(uint32_t spi);
+void spi_send_msb_first(uint32_t spi);
+void spi_set_baudrate_prescaler(uint32_t spi, uint8_t baudrate);
+void spi_set_master_mode(uint32_t spi);
+void spi_set_clock_polarity_1(uint32_t spi);
+void spi_set_clock_polarity_0(uint32_t spi);
+void spi_set_clock_phase_1(uint32_t spi);
+void spi_set_clock_phase_0(uint32_t spi);
+void spi_enable_ss_output(uint32_t spi);
+void spi_disable_ss_output(uint32_t spi);
+void spi_enable_tx_dma(uint32_t spi);
+void spi_disable_tx_dma(uint32_t spi);
+void spi_enable_rx_dma(uint32_t spi);
+void spi_disable_rx_dma(uint32_t spi);
+void spi_set_standard_mode(uint32_t spi, uint8_t mode);
+
+int spi_init_master(uint32_t spi, uint32_t br, uint32_t cpol, uint32_t cpha, 
+		uint32_t lsbfirst);
+void spi_set_crcl_8bit(uint32_t spi);
+void spi_set_crcl_16bit(uint32_t spi);
+void spi_set_data_size(uint32_t spi, uint16_t data_s);
+void spi_fifo_reception_threshold_8bit(uint32_t spi);
+void spi_fifo_reception_threshold_16bit(uint32_t spi);
+void spi_i2s_mode_spi_mode(uint32_t spi);
+void spi_send8(uint32_t spi, uint8_t data);
+uint8_t spi_read8(uint32_t spi);
+#endif
+
+#endif
 	platform_timing_init();
 	cdcacm_init();
 }
@@ -125,9 +185,17 @@ static void do_stlinkv3_mini_help(void)
 static void do_help(void)
 { print_str("TODO: help is not available at this moment; please, provide help here\n"); }
 
+static void do_spi_send8(void)
+{ spi_send8(STLINKV3_MINI_SPI, sf_pop()); sf_push(spi_read8(STLINKV3_MINI_SPI)); }
+
+static void do_spi_send(void)
+{ sf_push(spi_xfer(STLINKV3_MINI_SPI, sf_pop())); }
+
 static struct word dict_base_dummy_word[1] = { MKWORD(0, 0, "", 0), };
 static const struct word custom_dict[] = {
 	MKWORD(dict_base_dummy_word,	0,		"stlinkv3-mini-help",	do_stlinkv3_mini_help),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-send8",	do_spi_send8),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-send",	do_spi_send),
 	MKWORD(custom_dict,		__COUNTER__,	"help",	do_help),
 
 }, * custom_dict_start = custom_dict + __COUNTER__;
