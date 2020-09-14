@@ -66,7 +66,7 @@ void platform_init(void)
 	/* Configure and set the TPWR_EN pin. */
 	gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO0);
-	GPIOB_BSRR = 1 << 0;
+	gpio_set(GPIOB, GPIO0);
 #else
 	rcc_periph_clock_enable(RCC_SPI5);
 	/* Configure spi pins. */
@@ -191,11 +191,90 @@ static void do_spi_send8(void)
 static void do_spi_send(void)
 { sf_push(spi_xfer(STLINKV3_MINI_SPI, sf_pop())); }
 
+static void do_spi_cpol0(void) { spi_set_clock_polarity_0(STLINKV3_MINI_SPI); }
+static void do_spi_cpol1(void) { spi_set_clock_polarity_1(STLINKV3_MINI_SPI); }
+
+static void do_spi_cphase0(void) { spi_set_clock_phase_0(STLINKV3_MINI_SPI); }
+static void do_spi_cphase1(void) { spi_set_clock_phase_1(STLINKV3_MINI_SPI); }
+
+static void do_spi_set_baud_prescaler(void) { spi_set_baudrate_prescaler(STLINKV3_MINI_SPI, sf_pop() & 7); }
+static void do_spi_set_data_bitsize(void) { unsigned t = sf_pop() & 15; (t < 3) ? t = 3 : 0; spi_set_data_size(STLINKV3_MINI_SPI, sf_pop() & 7); }
+
+static void do_swdio_float(void)
+{
+	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
+}
+
+static void do_swdio_drive(void)
+{
+	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
+}
+
+static void do_spi_to_gpio(void)
+{
+	spi_disable(STLINKV3_MINI_SPI);
+
+	do_swdio_float();
+
+	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
+}
+
+static void do_gpio_to_spi(void)
+{
+	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
+
+	gpio_mode_setup(STLINKV3_MINI_SPI_MISO_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MISO_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_MISO_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MISO_PIN);
+
+	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
+
+	spi_enable(STLINKV3_MINI_SPI);
+}
+
+static void do_swdio_read(void) { sf_push(gpio_get(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_MOSI_PIN) ? 1 : 0); }
+
+static void do_swdio_hi(void) { gpio_set(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_MOSI_PIN); }
+static void do_swdio_low(void) { gpio_clear(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_MOSI_PIN); }
+
+static void do_swck_low(void) { gpio_set(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
+static void do_swck_hi(void) { gpio_clear(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
+
 static struct word dict_base_dummy_word[1] = { MKWORD(0, 0, "", 0), };
 static const struct word custom_dict[] = {
 	MKWORD(dict_base_dummy_word,	0,		"stlinkv3-mini-help",	do_stlinkv3_mini_help),
 	MKWORD(custom_dict,		__COUNTER__,	"spi-send8",	do_spi_send8),
 	MKWORD(custom_dict,		__COUNTER__,	"spi-send",	do_spi_send),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-cpol0",	do_spi_cpol0),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-cpol1",	do_spi_cpol1),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-cphase0",	do_spi_cphase0),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-cphase1",	do_spi_cphase1),
+
+	MKWORD(custom_dict,		__COUNTER__,	"spi-set-baud-prescaler",	do_spi_set_baud_prescaler),
+	MKWORD(custom_dict,		__COUNTER__,	"spi-set-data-bitsize",		do_spi_set_data_bitsize),
+
+	MKWORD(custom_dict,		__COUNTER__,	"spi>gpio",	do_spi_to_gpio),
+	MKWORD(custom_dict,		__COUNTER__,	"gpio>spi",	do_gpio_to_spi),
+
+	MKWORD(custom_dict,		__COUNTER__,	"swdio-float",	do_swdio_float),
+	MKWORD(custom_dict,		__COUNTER__,	"swdio-drive",	do_swdio_drive),
+
+	MKWORD(custom_dict,		__COUNTER__,	"swdio-hi",	do_swdio_hi),
+	MKWORD(custom_dict,		__COUNTER__,	"swdio-low",	do_swdio_low),
+
+	MKWORD(custom_dict,		__COUNTER__,	"swdio-read",	do_swdio_read),
+
+	MKWORD(custom_dict,		__COUNTER__,	"swck-hi",	do_swck_hi),
+	MKWORD(custom_dict,		__COUNTER__,	"swck-low",	do_swck_low),
+
 	MKWORD(custom_dict,		__COUNTER__,	"help",	do_help),
 
 }, * custom_dict_start = custom_dict + __COUNTER__;
