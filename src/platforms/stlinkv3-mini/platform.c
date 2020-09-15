@@ -198,7 +198,7 @@ static void do_spi_cphase0(void) { spi_set_clock_phase_0(STLINKV3_MINI_SPI); }
 static void do_spi_cphase1(void) { spi_set_clock_phase_1(STLINKV3_MINI_SPI); }
 
 static void do_spi_set_baud_prescaler(void) { spi_set_baudrate_prescaler(STLINKV3_MINI_SPI, sf_pop() & 7); }
-static void do_spi_set_data_bitsize(void) { unsigned t = sf_pop() & 15; (t < 3) ? t = 3 : 0; spi_set_data_size(STLINKV3_MINI_SPI, sf_pop() & 7); }
+static void do_spi_set_data_bitsize(void) { unsigned t = sf_pop() & 15; if (t < 3) t = 3; spi_set_data_size(STLINKV3_MINI_SPI, t); }
 
 static void do_swdio_float(void)
 {
