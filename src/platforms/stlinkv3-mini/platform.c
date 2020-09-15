@@ -245,8 +245,8 @@ static void do_swdio_read(void) { sf_push(gpio_get(STLINKV3_MINI_SPI_MOSI_PORT, 
 static void do_swdio_hi(void) { gpio_set(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_MOSI_PIN); }
 static void do_swdio_low(void) { gpio_clear(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_MOSI_PIN); }
 
-static void do_swck_low(void) { gpio_set(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
-static void do_swck_hi(void) { gpio_clear(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
+static void do_swck_hi(void) { gpio_set(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
+static void do_swck_low(void) { gpio_clear(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); }
 
 static struct word dict_base_dummy_word[1] = { MKWORD(0, 0, "", 0), };
 static const struct word custom_dict[] = {
