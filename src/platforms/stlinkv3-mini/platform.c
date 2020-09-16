@@ -198,7 +198,30 @@ static void do_spi_cphase0(void) { spi_set_clock_phase_0(STLINKV3_MINI_SPI); }
 static void do_spi_cphase1(void) { spi_set_clock_phase_1(STLINKV3_MINI_SPI); }
 
 static void do_spi_set_baud_prescaler(void) { spi_set_baudrate_prescaler(STLINKV3_MINI_SPI, sf_pop() & 7); }
-static void do_spi_set_data_bitsize(void) { unsigned t = sf_pop() & 15; if (t < 3) t = 3; spi_set_data_size(STLINKV3_MINI_SPI, t); }
+static void do_spi_set_data_bitsize(void)
+{
+	static const uint16_t data_sizes[16] =
+	{
+		SPI_CR2_DS_4BIT,
+		SPI_CR2_DS_4BIT,
+		SPI_CR2_DS_4BIT,
+		SPI_CR2_DS_4BIT,
+		SPI_CR2_DS_5BIT,
+		SPI_CR2_DS_6BIT,
+		SPI_CR2_DS_7BIT,
+		SPI_CR2_DS_8BIT,
+		SPI_CR2_DS_9BIT,
+		SPI_CR2_DS_10BIT,
+		SPI_CR2_DS_11BIT,
+		SPI_CR2_DS_12BIT,
+		SPI_CR2_DS_13BIT,
+		SPI_CR2_DS_14BIT,
+		SPI_CR2_DS_15BIT,
+		SPI_CR2_DS_16BIT,
+	};
+	unsigned t = sf_pop() & 15;
+	spi_set_data_size(STLINKV3_MINI_SPI, data_sizes[t]);
+}
 
 static void do_swdio_float(void)
 {
