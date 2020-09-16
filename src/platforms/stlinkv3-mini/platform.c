@@ -49,7 +49,7 @@ void platform_init(void)
 {
 
 	rcc_periph_clock_enable(RCC_APB2ENR_SYSCFGEN);
-	rcc_clock_setup_hse(rcc_3v3 + RCC_CLOCK_3V3_216MHZ, 25000000);
+	rcc_clock_setup_hse(rcc_3v3 + RCC_CLOCK_3V3_216MHZ, 25);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
