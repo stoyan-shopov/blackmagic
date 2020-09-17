@@ -27,7 +27,10 @@ else
 LDFLAGS += --specs=nosys.specs
 endif
 
+SRC += stlinkv3-mini-swdptap.c
+
 VPATH += platforms/stm32
+HAS_SWDPTAP_LL = 1
 
 SRC += 	cdcacm.c	\
 	serialno.c	\

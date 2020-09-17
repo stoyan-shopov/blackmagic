@@ -7,7 +7,7 @@ VPATH += sforth
 STACK_DEPTH ?= 32
 # sforth engine core size, in words
 CORE_CELLS_COUNT ?= 4 * 1024
-RUN_SFORTH ?= 1
+RUN_SFORTH ?= 0
 
 ENABLE_DEBUG ?=
 
@@ -94,7 +94,10 @@ endif
 ifdef PC_HOSTED
 CFLAGS += -DPC_HOSTED=1
 else
-SRC += swdptap.c jtagtap.c
+ifndef HAS_SWDPTAP_LL
+SRC += swdptap.c
+endif
+SRC += jtagtap.c
 CFLAGS += -DPC_HOSTED=0
 VPATH += platforms/common
 CFLAGS += -Iplatforms/common
