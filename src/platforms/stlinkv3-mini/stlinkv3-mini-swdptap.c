@@ -21,8 +21,11 @@
 
 /* This file implements the SW-DP interface. */
 
+#include <libopencm3/stm32/spi.h>
+
 #include "general.h"
 #include "swdptap.h"
+
 
 enum {
 	SWDIO_STATUS_FLOAT = 0,
@@ -38,6 +41,42 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 	__attribute__ ((optimize(3)));
 
 static int olddir = SWDIO_STATUS_FLOAT;
+
+static void set_swdio_direction_to_current_direction(void)
+{
+	if (olddir == SWDIO_STATUS_FLOAT)
+		SWDIO_MODE_FLOAT();
+	else
+		SWDIO_MODE_DRIVE();
+}
+
+static void do_gpio_to_spi(void)
+{
+	if (olddir == SWDIO_STATUS_DRIVE)
+	{
+		gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
+		gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
+		gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
+	}
+	else
+		SWDIO_MODE_FLOAT();
+
+	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
+
+	spi_enable(STLINKV3_MINI_SPI);
+}
+
+static void do_spi_to_gpio(void)
+{
+	spi_disable(STLINKV3_MINI_SPI);
+
+	set_swdio_direction_to_current_direction();
+
+	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
+	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
+}
 
 static bool is_turnaround_neeed(int dir) __attribute__ ((optimize(3)));
 static bool is_turnaround_neeed(int dir)
@@ -101,15 +140,28 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 	int len = ticks;
 
 	swdptap_turnaround(SWDIO_STATUS_FLOAT);
-	while (len--) {
-		bit = gpio_get(SWDIO_PORT, SWDIO_PIN);
-		gpio_set(SWCLK_PORT, SWCLK_PIN);
-		gpio_set(SWCLK_PORT, SWCLK_PIN);
-		gpio_set(SWCLK_PORT, SWCLK_PIN);
-		if (bit)
-			res |= index;
-		index <<= 1;
-		gpio_clear(SWCLK_PORT, SWCLK_PIN);
+	if (ticks == 32 && 0)
+	{
+		uint32_t t = 0;
+		do_gpio_to_spi();
+		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_16BIT);
+		t = spi_xfer(STLINKV3_MINI_SPI, 0);
+		t |= spi_xfer(STLINKV3_MINI_SPI, 0) << 16;
+		ret[0] = t;
+		do_spi_to_gpio();
+	}
+	else
+	{
+		while (len--) {
+			bit = gpio_get(SWDIO_PORT, SWDIO_PIN);
+			gpio_set(SWCLK_PORT, SWCLK_PIN);
+			gpio_set(SWCLK_PORT, SWCLK_PIN);
+			gpio_set(SWCLK_PORT, SWCLK_PIN);
+			if (bit)
+				res |= index;
+			index <<= 1;
+			gpio_clear(SWCLK_PORT, SWCLK_PIN);
+		}
 	}
 	int parity = __builtin_popcount(res);
 	bit = gpio_get(SWDIO_PORT, SWDIO_PIN);
@@ -152,13 +204,25 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 		DEBUG("%d", (MS & (1 << i)) ? 1 : 0);
 #endif
 	swdptap_turnaround(SWDIO_STATUS_DRIVE);
-	gpio_set_val(SWDIO_PORT, SWDIO_PIN, MS & 1);
-	MS >>= 1;
-	while (ticks--) {
-		gpio_set(SWCLK_PORT, SWCLK_PIN);
+	if (ticks == 32)
+	{
+		do_gpio_to_spi();
+		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_16BIT);
+		spi_xfer(STLINKV3_MINI_SPI, MS);
+		spi_xfer(STLINKV3_MINI_SPI, MS >> 16);
+		do_spi_to_gpio();
+	}
+	else
+	{
+
 		gpio_set_val(SWDIO_PORT, SWDIO_PIN, MS & 1);
 		MS >>= 1;
-		gpio_clear(SWCLK_PORT, SWCLK_PIN);
+		while (ticks--) {
+			gpio_set(SWCLK_PORT, SWCLK_PIN);
+			gpio_set_val(SWDIO_PORT, SWDIO_PIN, MS & 1);
+			MS >>= 1;
+			gpio_clear(SWCLK_PORT, SWCLK_PIN);
+		}
 	}
 	gpio_set_val(SWDIO_PORT, SWDIO_PIN, parity & 1);
 	gpio_set(SWCLK_PORT, SWCLK_PIN);

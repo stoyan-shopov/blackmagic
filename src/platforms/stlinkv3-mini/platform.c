@@ -271,6 +271,7 @@ void platform_init(void)
 
 	/* By default, drive the swd bus by gpio bitbanging. */
 	do_spi_to_gpio();
+	do_swck_low();
 #if 0
 void spi_enable(uint32_t spi);
 void spi_disable(uint32_t spi);
