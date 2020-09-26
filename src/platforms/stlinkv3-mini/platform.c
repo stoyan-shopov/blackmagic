@@ -240,6 +240,7 @@ void platform_init(void)
 
 	rcc_periph_clock_enable(RCC_APB2ENR_SYSCFGEN);
 	rcc_clock_setup_hse(rcc_3v3 + RCC_CLOCK_3V3_216MHZ, 25);
+	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
@@ -250,6 +251,10 @@ void platform_init(void)
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO0);
 	/* Output 5V. */
 	gpio_set(GPIOB, GPIO0);
+
+	/* Configure scope trigger signal. */
+	gpio_mode_setup(SCOPE_TRIGGER_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SCOPE_TRIGGER_PIN);
+	gpio_set_output_options(SCOPE_TRIGGER_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SCOPE_TRIGGER_PIN);
 
 	rcc_periph_clock_enable(RCC_SPI5);
 	/* Configure spi pins - used for swd bus driving. */

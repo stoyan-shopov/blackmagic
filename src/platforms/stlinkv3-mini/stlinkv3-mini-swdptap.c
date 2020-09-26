@@ -21,6 +21,14 @@
 
 /* This file implements the SW-DP interface. */
 
+/* TODO: currently, this code needs much cleaning. Here are some notes:
+ * - the libopencm3 functions for configuring mcu pins (gpio_mode_setup(),
+ * gpio_set_output_options()) are very slow, they need replacement with
+ * more straightforward code
+ * - the serial clock (SWCK) on the SWD bus needs better handling now
+ * that the hardware spi is being used instead of bitbanging
+ */
+
 #include <libopencm3/stm32/spi.h>
 
 #include "general.h"
@@ -50,8 +58,11 @@ static void set_swdio_direction_to_current_direction(void)
 		SWDIO_MODE_DRIVE();
 }
 
-static void do_gpio_to_spi(void)
+static void do_gpio_to_spi(unsigned clock_phase, unsigned clock_polarity)
 {
+	(clock_phase ? spi_set_clock_phase_1 : spi_set_clock_phase_0)(STLINKV3_MINI_SPI);
+	(clock_polarity ? spi_set_clock_polarity_1 : spi_set_clock_polarity_0)(STLINKV3_MINI_SPI);
+
 	if (olddir == SWDIO_STATUS_DRIVE)
 	{
 		gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
@@ -101,6 +112,8 @@ static void swdptap_turnaround(int dir)
 	gpio_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 	if(dir == SWDIO_STATUS_DRIVE)
 		SWDIO_MODE_DRIVE();
 }
@@ -123,6 +136,8 @@ static uint32_t swdptap_seq_in(int ticks)
 			ret |= index;
 		index <<= 1;
 		gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 	}
 
 #ifdef DEBUG_SWD_BITS
@@ -140,15 +155,41 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 	int len = ticks;
 
 	swdptap_turnaround(SWDIO_STATUS_FLOAT);
-	if (ticks == 32 && 0)
+//PULSE_SCOPE_TRIGGER();
+	if (ticks == 32 && 1)
 	{
-		uint32_t t = 0;
-		do_gpio_to_spi();
+//gpio_clear(SWCLK_PORT, SWCLK_PIN);
+		uint32_t lsb = (gpio_get(SWDIO_PORT, SWDIO_PIN) ? 1 : 0);
+		do_gpio_to_spi(1, 0);
+		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_15BIT);
+		res = spi_xfer(STLINKV3_MINI_SPI, 0);
+		res &= 0x7fff;
+		res <<= 1;
+		res |= lsb;
 		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_16BIT);
-		t = spi_xfer(STLINKV3_MINI_SPI, 0);
-		t |= spi_xfer(STLINKV3_MINI_SPI, 0) << 16;
-		ret[0] = t;
+		res |= spi_xfer(STLINKV3_MINI_SPI, 0) << 16;
 		do_spi_to_gpio();
+// TODO: clean this.		
+#if 1
+PULSE_SCOPE_TRIGGER();
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_set(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+#endif
+
 	}
 	else
 	{
@@ -161,6 +202,8 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 				res |= index;
 			index <<= 1;
 			gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 		}
 	}
 	int parity = __builtin_popcount(res);
@@ -171,6 +214,8 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 	else
 		gpio_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 #ifdef DEBUG_SWD_BITS
 	for (int i = 0; i < len; i++)
 		DEBUG("%d", (res & (1 << i)) ? 1 : 0);
@@ -193,6 +238,8 @@ static void swdptap_seq_out(uint32_t MS, int ticks)
 		gpio_set_val(SWDIO_PORT, SWDIO_PIN, MS & 1);
 		gpio_clear(SWCLK_PORT, SWCLK_PIN);
 		gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 	}
 }
 
@@ -206,7 +253,7 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 	swdptap_turnaround(SWDIO_STATUS_DRIVE);
 	if (ticks == 32)
 	{
-		do_gpio_to_spi();
+		do_gpio_to_spi(0, 0);
 		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_16BIT);
 		spi_xfer(STLINKV3_MINI_SPI, MS);
 		spi_xfer(STLINKV3_MINI_SPI, MS >> 16);
@@ -222,6 +269,8 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 			gpio_set_val(SWDIO_PORT, SWDIO_PIN, MS & 1);
 			MS >>= 1;
 			gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 		}
 	}
 	gpio_set_val(SWDIO_PORT, SWDIO_PIN, parity & 1);
@@ -229,6 +278,8 @@ static void swdptap_seq_out_parity(uint32_t MS, int ticks)
 	gpio_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_set(SWCLK_PORT, SWCLK_PIN);
 	gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
+gpio_clear(SWCLK_PORT, SWCLK_PIN);
 }
 
 swd_proc_t swd_proc;
