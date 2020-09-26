@@ -89,6 +89,11 @@ int usbuart_debug_write(const char *buf, size_t len);
 //# define SWD_CR   GPIO_CRH(SWDIO_PORT)
 //# define SWD_CR_MULT (1 << ((14 - 8) << 2))
 
+/* These are used for oscilloscope measurements triggering. */
+#define SCOPE_TRIGGER_PORT		GPIOA
+#define SCOPE_TRIGGER_PIN		GPIO6
+#define PULSE_SCOPE_TRIGGER()		do { gpio_set(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); gpio_set(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); gpio_clear(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); } while(0)
+
 #define SWDIO_MODE_FLOAT()	do { gpio_mode_setup(SWDIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SWDIO_PIN); } while (0)
 #define SWDIO_MODE_DRIVE()	do {\
 	gpio_mode_setup(SWDIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SWDIO_PIN);\

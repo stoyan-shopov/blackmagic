@@ -22,6 +22,9 @@
  * Serial Debugging protocol is implemented.  This implementation for STM32
  * uses the USB CDC-ACM device bulk endpoints to implement the channel.
  */
+
+/* TODO: libopencm3 needs changing the usb error reporting so that it is
+ * possible for zero-length packets to be reliably sent. */
 #include "general.h"
 #include "cdcacm.h"
 #include "gdb_if.h"
@@ -49,7 +52,7 @@ void gdb_if_putchar(unsigned char c, int flush)
 		}
 #endif
 		while(usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
-			buffer_in, count_in) <= 0);
+			buffer_in, count_in) == 0xffff);
 
 		if (flush && (count_in == CDCACM_PACKET_SIZE)) {
 			/* We need to send an empty packet for some hosts
@@ -59,7 +62,7 @@ void gdb_if_putchar(unsigned char c, int flush)
 			 * containing a null byte for now.
 			 */
 			while (usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
-				"\0", 1) <= 0);
+				"\0", 1) == 0xffff);
 		}
 
 		count_in = 0;
