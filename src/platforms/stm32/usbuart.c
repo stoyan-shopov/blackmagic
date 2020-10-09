@@ -214,9 +214,12 @@ void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)
  */
 void USBUSART_ISR(void)
 {
-	/* TODO: write this. */
-#if 0
-	uint32_t err = USART_SR(USBUSART);
+	uint32_t err;
+#if defined STM32F7
+	err = USART_ISR(USBUSART);
+#else
+	err = USART_SR(USBUSART);
+#endif
 	char c = usart_recv(USBUSART);
 #if !defined(USART_SR_NE) && defined(USART_ISR_NF)
 # define USART_SR_NE USART_ISR_NF
@@ -244,7 +247,6 @@ void USBUSART_ISR(void)
 		/* enable deferred processing if we put data in the FIFO */
 		timer_enable_irq(USBUSART_TIM, TIM_DIER_UIE);
 	}
-#endif
 }
 
 void USBUSART_TIM_ISR(void)

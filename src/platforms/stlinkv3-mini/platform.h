@@ -95,7 +95,6 @@ int usbuart_debug_write(const char *buf, size_t len);
 	gpio_set_output_options(SWDIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SWDIO_PIN);\
 } while (0)
 #define TMS_SET_MODE()		SWDIO_MODE_DRIVE()
-#define UART_PIN_SETUP() /* TODO: write this. */
 
 #define USB_DRIVER      stm32f723_usb_driver
 #define USB_IRQ	        NVIC_OTG_HS_IRQ
@@ -109,17 +108,31 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define IRQ_PRI_USB_VBUS	(14 << 4)
 #define IRQ_PRI_SWO_DMA			(1 << 4)
 
-#define USBUSART USART2
-#define USBUSART_CR1 USART2_CR1
-#define USBUSART_IRQ NVIC_USART2_IRQ
-#define USBUSART_CLK RCC_USART2
-#define USBUSART_PORT GPIOA
-#define USBUSART_TX_PIN GPIO2
-#define USBUSART_ISR usart2_isr
+#define USBUSART USART6
+#define USBUSART_CR1 USART_CR1(USART6_BASE)
+#define USBUSART_IRQ NVIC_USART6_IRQ
+#define USBUSART_CLK RCC_USART6
+#define USBUSART_PORT GPIOG
+#define USBUSART_PIN_AF        GPIO_AF8
+#define USBUSART_PORT_CLKEN RCC_GPIOG
+#define USBUSART_TX_PIN GPIO14
+#define USBUSART_RX_PIN GPIO9
+#define USBUSART_ISR usart6_isr
 #define USBUSART_TIM TIM4
 #define USBUSART_TIM_CLK_EN() rcc_periph_clock_enable(RCC_TIM4)
 #define USBUSART_TIM_IRQ NVIC_TIM4_IRQ
 #define USBUSART_TIM_ISR tim4_isr
+
+#define UART_PIN_SETUP() {\
+       rcc_periph_clock_enable(USBUSART_PORT_CLKEN); \
+       gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_TX_PIN);\
+       gpio_set_output_options(USBUSART_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, USBUSART_TX_PIN);\
+       gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_TX_PIN);\
+\
+       gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_RX_PIN);\
+       gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_RX_PIN);\
+} while (0)
+
 
 /* On F103, only USART1 is on AHB2 and can reach 4.5 MBaud at 72 MHz.*/
 #define SWO_UART				USART1

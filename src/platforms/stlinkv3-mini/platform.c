@@ -65,28 +65,10 @@ const char *platform_target_voltage(void)
 	return ret;
 }
 
-void usbuart_set_line_coding(struct usb_cdc_line_coding *coding)
-{
-	(void)coding;
-}
-
 void platform_request_boot(void)
 {
 	while (1);
 }
-
-void usbuart_usb_in_cb(usbd_device *dev, uint8_t ep)
-{
-	(void) dev;
-	(void) ep;
-}
-
-void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
-{
-	(void)ep;
-	(void)dev;
-}
-
 
 #if RUN_SFORTH == 1 || 1
 #include "engine.h"
@@ -245,7 +227,6 @@ void platform_init(void)
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
 
-
 	/* Configure and set the TPWR_EN pin. */
 	gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO0);
@@ -317,4 +298,5 @@ uint8_t spi_read8(uint32_t spi);
 #endif
 	platform_timing_init();
 	cdcacm_init();
+	usbuart_init();
 }
