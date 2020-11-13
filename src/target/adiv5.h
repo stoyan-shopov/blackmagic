@@ -86,6 +86,19 @@
 #define ADIV5_AP_BASE		ADIV5_AP_REG(0xF8)
 #define ADIV5_AP_IDR		ADIV5_AP_REG(0xFC)
 
+/* Known designers seen in SYSROM-PIDR. Ignore Bit 7 from the designer bits*/
+#define AP_DESIGNER_FREESCALE    0x00e
+#define AP_DESIGNER_TEXAS        0x017
+#define AP_DESIGNER_ATMEL        0x01f
+#define AP_DESIGNER_STM          0x020
+#define AP_DESIGNER_CYPRESS      0x034
+#define AP_DESIGNER_INFINEON     0x041
+#define AP_DESIGNER_NORDIC       0x244
+#define AP_DESIGNER_ARM          0x43b
+/*LPC845 with designer 501. Strange!? */
+#define AP_DESIGNER_SPECULAR     0x501
+#define AP_DESIGNER_ENERGY_MICRO 0x673
+
 /* AP Control and Status Word (CSW) */
 #define ADIV5_AP_CSW_DBGSWENABLE	(1u << 31)
 /* Bits 30:24 - Prot, Implementation defined, for Cortex-M3: */
@@ -161,15 +174,8 @@ typedef struct ADIv5_DP_s {
 	void (*mem_read)(ADIv5_AP_t *ap, void *dest, uint32_t src, size_t len);
 	void (*mem_write_sized)(ADIv5_AP_t *ap, uint32_t dest, const void *src,
 							size_t len, enum align align);
-#if PC_HOSTED == 1
-	jtag_dev_t *dev;
+	uint8_t dp_jd_index;
 	uint8_t fault;
-#else
-	union {
-		jtag_dev_t *dev;
-		uint8_t fault;
-	};
-#endif
 } ADIv5_DP_t;
 
 struct ADIv5_AP_s {
@@ -181,6 +187,10 @@ struct ADIv5_AP_s {
 	uint32_t idr;
 	uint32_t base;
 	uint32_t csw;
+	uint32_t ap_cortexm_demcr; /* Copy of demcr when starting */
+	uint32_t ap_storage; /* E.g to hold STM32F7 initial DBGMCU_CR value.*/
+	uint16_t ap_designer;
+	uint16_t ap_partno;
 };
 
 #if PC_HOSTED == 0
@@ -250,10 +260,12 @@ void adiv5_dp_write(ADIv5_DP_t *dp, uint16_t addr, uint32_t value);
 void adiv5_dp_init(ADIv5_DP_t *dp);
 void platform_adiv5_dp_defaults(ADIv5_DP_t *dp);
 ADIv5_AP_t *adiv5_new_ap(ADIv5_DP_t *dp, uint8_t apsel);
+void remote_jtag_dev(const jtag_dev_t *jtag_dev);
 void adiv5_ap_ref(ADIv5_AP_t *ap);
 void adiv5_ap_unref(ADIv5_AP_t *ap);
+void platform_add_jtag_dev(const int dev_index, const jtag_dev_t *jtag_dev);
 
-void adiv5_jtag_dp_handler(jtag_dev_t *dev);
+void adiv5_jtag_dp_handler(uint8_t jd_index, uint32_t j_idcode);
 int platform_jtag_dp_init(ADIv5_DP_t *dp);
 
 void adiv5_mem_write(ADIv5_AP_t *ap, uint32_t dest, const void *src, size_t len);

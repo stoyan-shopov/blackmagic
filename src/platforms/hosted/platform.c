@@ -161,9 +161,13 @@ static int find_debuggers(	BMP_CL_OPTIONS_t *cl_opts,bmp_info_t *info)
 		}
 		/* Either serial and/or ident_string match or are not given.
 		 * Check type.*/
-		if ((desc.idVendor == VENDOR_ID_BMP) &&
-			(desc.idProduct == PRODUCT_ID_BMP)) {
-			type = BMP_TYPE_BMP;
+		if (desc.idVendor == VENDOR_ID_BMP) {
+			if (desc.idProduct == PRODUCT_ID_BMP) {
+				type = BMP_TYPE_BMP;
+			} else if (desc.idProduct == PRODUCT_ID_BMP_BL) {
+				DEBUG_WARN("BMP in botloader mode found. Restart or reflash!\n");
+				continue;
+			}
 		} else if ((strstr(manufacturer, "CMSIS")) || (strstr(product, "CMSIS"))) {
 			type = BMP_TYPE_CMSIS_DAP;
 		} else if (desc.idVendor ==  VENDOR_ID_STLINK) {
@@ -263,9 +267,10 @@ static int find_debuggers(	BMP_CL_OPTIONS_t *cl_opts,bmp_info_t *info)
 	return (found_debuggers == 1) ? 0 : -1;
 }
 
+static	BMP_CL_OPTIONS_t cl_opts;
+
 void platform_init(int argc, char **argv)
 {
-	BMP_CL_OPTIONS_t cl_opts = {0};
 	cl_opts.opt_idstring = "Blackmagic PC-Hosted";
 	cl_init(&cl_opts, argc, argv);
 	atexit(exit_function);
@@ -347,7 +352,6 @@ int platform_adiv5_swdp_scan(void)
 			if (target_list)
 				return 1;
 		}
-		free(dp);
 		break;
 	}
 	case BMP_TYPE_CMSIS_DAP:
@@ -359,7 +363,6 @@ int platform_adiv5_swdp_scan(void)
 			if (target_list)
 				return 1;
 		}
-		free(dp);
 		break;
 	}
 	case BMP_TYPE_JLINK:
@@ -385,6 +388,12 @@ int platform_swdptap_init(void)
 		return -1;
 	}
 	return -1;
+}
+
+void platform_add_jtag_dev(int i, const jtag_dev_t *jtag_dev)
+{
+	if (info.bmp_type == BMP_TYPE_BMP)
+		remote_add_jtag_dev(i, jtag_dev);
 }
 
 int platform_jtag_scan(const uint8_t *lrlens)
@@ -426,6 +435,10 @@ void platform_adiv5_dp_defaults(ADIv5_DP_t *dp)
 {
 	switch (info.bmp_type) {
 	case BMP_TYPE_BMP:
+		if (cl_opts.opt_no_hl) {
+			DEBUG_WARN("Not using HL commands\n");
+			return;
+		}
 		return remote_adiv5_dp_defaults(dp);
 	case BMP_TYPE_STLINKV2:
 		return stlink_adiv5_dp_defaults(dp);

@@ -1,9 +1,9 @@
 /*
  * This file is part of the Black Magic Debug project.
  *
- * Copyright (C) 2012  Black Sphere Technologies Ltd.
+ * Copyright (C) 2012-2020  Black Sphere Technologies Ltd.
  * Written by Gareth McMullin <gareth@blacksphere.co.nz>,
- * Koen De Vleeschauwer and Uwe Bonne
+ * Koen De Vleeschauwer and Uwe Bonnes
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@
 #include "cortexm.h"
 #include "platform.h"
 #include "command.h"
+#include "gdb_packet.h"
 
 #include <unistd.h>
 
@@ -263,28 +264,7 @@ static void cortexm_priv_free(void *priv)
 	free(priv);
 }
 
-static bool cortexm_forced_halt(target *t)
-{
-	target_halt_request(t);
-	platform_srst_set_val(false);
-	uint32_t dhcsr = 0;
-	uint32_t start_time = platform_time_ms();
-	const uint32_t dhcsr_halted_bits = CORTEXM_DHCSR_S_HALT | CORTEXM_DHCSR_S_REGRDY |
-									   CORTEXM_DHCSR_C_HALT | CORTEXM_DHCSR_C_DEBUGEN;
-	/* Try hard to halt the target. STM32F7 in  WFI
-	   needs multiple writes!*/
-	while (platform_time_ms() < start_time + cortexm_wait_timeout) {
-		dhcsr = target_mem_read32(t, CORTEXM_DHCSR);
-		if ((dhcsr & dhcsr_halted_bits) == dhcsr_halted_bits)
-			break;
-		target_halt_request(t);
-	}
-	if ((dhcsr & dhcsr_halted_bits) != dhcsr_halted_bits)
-		return false;
-	return true;
-}
-
-bool cortexm_probe(ADIv5_AP_t *ap, bool forced)
+bool cortexm_probe(ADIv5_AP_t *ap)
 {
 	target *t;
 
@@ -294,6 +274,8 @@ bool cortexm_probe(ADIv5_AP_t *ap, bool forced)
 	}
 
 	adiv5_ap_ref(ap);
+	t->t_designer = ap->ap_designer;
+	t->idcode     = ap->ap_partno;
 	struct cortexm_priv *priv = calloc(1, sizeof(*priv));
 	if (!priv) {			/* calloc failed: heap exhaustion */
 		DEBUG_WARN("calloc: failed in %s\n", __func__);
@@ -337,6 +319,10 @@ bool cortexm_probe(ADIv5_AP_t *ap, bool forced)
 
 	case 0xc27:
 		t->core = "M7";
+		if ((((cpuid >> 20) & 0xf) == 0) && (((cpuid >> 0) & 0xf) < 2)) {
+			DEBUG_WARN("Silicon bug: Single stepping will enter pending "
+					   "exception handler with this M7 core revision!\n");
+		}
 		break;
 
 	case 0xc60:
@@ -391,39 +377,82 @@ bool cortexm_probe(ADIv5_AP_t *ap, bool forced)
 	} else {
 		target_check_error(t);
 	}
-
-	/* Only force halt if read ROM Table failed and there is no DPv2
-	 * targetid!
-	 * So long, only STM32L0 is expected to enter this cause.
-	 */
-	if (forced && !ap->dp->targetid)
-		if (!cortexm_forced_halt(t))
-			return false;
-
 #define PROBE(x) \
 	do { if ((x)(t)) {target_halt_resume(t, 0); return true;} else target_check_error(t); } while (0)
 
-	PROBE(stm32f1_probe);
-	PROBE(stm32f4_probe);
-	PROBE(stm32h7_probe);
-	PROBE(stm32l0_probe);   /* STM32L0xx & STM32L1xx */
-	PROBE(stm32l4_probe);
-	PROBE(lpc11xx_probe);
-	PROBE(lpc15xx_probe);
-	PROBE(lpc43xx_probe);
-	PROBE(sam3x_probe);
-	PROBE(sam4l_probe);
-	PROBE(nrf51_probe);
-	PROBE(samd_probe);
-	PROBE(samx5x_probe);
-	PROBE(lmi_probe);
-	PROBE(kinetis_probe);
-	PROBE(efm32_probe);
-	PROBE(msp432_probe);
-	PROBE(ke04_probe);
-	PROBE(lpc17xx_probe);
+	switch (ap->ap_designer) {
+	case AP_DESIGNER_FREESCALE:
+		PROBE(kinetis_probe);
+		if (ap->ap_partno == 0x88c) {
+			t->driver = "MIMXRT10xx(no flash)";
+			target_halt_resume(t, 0);
+		}
+		break;
+	case AP_DESIGNER_STM:
+		PROBE(stm32f1_probe);
+		PROBE(stm32f4_probe);
+		PROBE(stm32h7_probe);
+		PROBE(stm32l0_probe);
+		PROBE(stm32l4_probe);
+		if (ap->ap_partno == 0x472) {
+			t->driver = "STM32L552(no flash)";
+			target_halt_resume(t, 0);
+		}
+		break;
+	case AP_DESIGNER_CYPRESS:
+		DEBUG_WARN("Unhandled Cypress device\n");
+		break;
+	case AP_DESIGNER_INFINEON:
+		DEBUG_WARN("Unhandled Infineon device\n");
+		break;
+	case AP_DESIGNER_NORDIC:
+		PROBE(nrf51_probe);
+		break;
+	case AP_DESIGNER_ATMEL:
+		PROBE(sam4l_probe);
+		PROBE(samd_probe);
+		PROBE(samx5x_probe);
+		break;
+	case AP_DESIGNER_ENERGY_MICRO:
+		PROBE(efm32_probe);
+		break;
+	case AP_DESIGNER_TEXAS:
+		PROBE(msp432_probe);
+		break;
+	case AP_DESIGNER_SPECULAR:
+		PROBE(lpc11xx_probe); /* LPC845 */
+		break;
+	default:
+		if (ap->ap_designer != AP_DESIGNER_ARM) {
+			/* Report unexpected designers */
+#if PC_HOSTED == 0
+				gdb_outf("Please report Designer %3x and Partno %3x and the "
+						 "probed device\n", ap->ap_designer, ap->ap_partno);
+#else
+				DEBUG_WARN("Please report Designer %3x and Partno %3x and the "
+						   "probed device\n", ap->ap_designer, ap->ap_partno);
+#endif
+		}
+		if (ap->ap_partno == 0x4c3)  /* Cortex-M3 ROM */
+			PROBE(stm32f1_probe); /* Care for STM32F1 clones */
+		else if (ap->ap_partno == 0x471) { /* Cortex-M0 ROM */
+			PROBE(lpc11xx_probe); /* LPC24C11 */
+			PROBE(lpc43xx_probe);
+		}
+		else if (ap->ap_partno == 0x4c4) { /* Cortex-M4 ROM */
+			PROBE(lpc43xx_probe);
+			PROBE(kinetis_probe); /* Older K-series */
+		}
+		/* Info on PIDR of these parts wanted! */
+		PROBE(sam3x_probe);
+		PROBE(lpc15xx_probe);
+		PROBE(lmi_probe);
+		PROBE(ke04_probe);
+		PROBE(lpc17xx_probe);
+	}
 #undef PROBE
-
+	/* Restart the CortexM we stopped for Romtable scan. Allow pure debug.*/
+	target_halt_resume(t, 0);
 	return true;
 }
 
@@ -437,9 +466,6 @@ bool cortexm_attach(target *t)
 	target_check_error(t);
 
 	target_halt_request(t);
-	if (!cortexm_forced_halt(t))
-		return false;
-
 	/* Request halt on reset */
 	target_mem_write32(t, CORTEXM_DEMCR, priv->demcr);
 
@@ -473,6 +499,22 @@ bool cortexm_attach(target *t)
 	target_mem_write32(t, CORTEXM_FPB_CTRL,
 			CORTEXM_FPB_CTRL_KEY | CORTEXM_FPB_CTRL_ENABLE);
 
+	uint32_t dhcsr = target_mem_read32(t, CORTEXM_DHCSR);
+	dhcsr = target_mem_read32(t, CORTEXM_DHCSR);
+	if (dhcsr & CORTEXM_DHCSR_S_RESET_ST) {
+		platform_srst_set_val(false);
+		platform_timeout timeout;
+		platform_timeout_set(&timeout, 1000);
+		while (1) {
+			uint32_t dhcsr = target_mem_read32(t, CORTEXM_DHCSR);
+			if (!(dhcsr & CORTEXM_DHCSR_S_RESET_ST))
+				break;
+			if (platform_timeout_is_expired(&timeout)) {
+				DEBUG_WARN("Error releasing from srst\n");
+				return false;
+			}
+		}
+	}
 	return true;
 }
 
@@ -489,6 +531,9 @@ void cortexm_detach(target *t)
 	for(i = 0; i < priv->hw_watchpoint_max; i++)
 		target_mem_write32(t, CORTEXM_DWT_FUNC(i), 0);
 
+	/* Restort DEMCR*/
+	ADIv5_AP_t *ap = cortexm_ap(t);
+	target_mem_write32(t, CORTEXM_DEMCR, ap->ap_cortexm_demcr);
 	/* Disable debug */
 	target_mem_write32(t, CORTEXM_DHCSR, CORTEXM_DHCSR_DBGKEY);
 	/* Add some clock cycles to get the CPU running again.*/
@@ -792,6 +837,8 @@ static void cortexm_halt_resume(target *t, bool step)
 		target_mem_write32(t, CORTEXM_ICIALLU, 0);
 
 	target_mem_write32(t, CORTEXM_DHCSR, dhcsr);
+	/* Add some clock cycles to get the CPU running again.*/
+	target_mem_read32(t, 0);
 }
 
 static int cortexm_fault_unwind(target *t)
