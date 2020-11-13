@@ -46,6 +46,13 @@
 
 usbd_device * usbdev;
 
+/* XXX: this does not belong here! */
+enum
+{
+	TRACE_ENDPOINT_SIZE	= 512,
+};
+
+
 static int configured;
 static int cdcacm_gdb_dtr = 1;
 
@@ -321,7 +328,7 @@ static const struct usb_endpoint_descriptor trace_endp[] = {{
 	.bDescriptorType = USB_DT_ENDPOINT,
 	.bEndpointAddress = 0x85,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
-	.wMaxPacketSize = 64,
+	.wMaxPacketSize = TRACE_ENDPOINT_SIZE,
 	.bInterval = 0,
 }};
 
@@ -385,12 +392,10 @@ static const struct usb_config_descriptor config = {
 	 * This is being done for the purposes of debugging the BMP for the
 	 * stlinkv3-mini target. When debugging is done, this will go away. */
 	.bNumInterfaces = 4,
-#if 0
 #if defined(PLATFORM_HAS_TRACESWO)
 	.bNumInterfaces = 6,
 #else
 	.bNumInterfaces = 5,
-#endif
 #endif
 	.bConfigurationValue = 1,
 	.iConfiguration = 0,
@@ -535,7 +540,7 @@ static void cdcacm_set_config(usbd_device *dev, uint16_t wValue)
 #if defined(PLATFORM_HAS_TRACESWO)
 	/* Trace interface */
 	usbd_ep_setup(dev, 0x85, USB_ENDPOINT_ATTR_BULK,
-					64, trace_buf_drain);
+					TRACE_ENDPOINT_SIZE, trace_buf_drain);
 #endif
 
 	usbd_register_control_callback(dev,

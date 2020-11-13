@@ -1,5 +1,4 @@
 CROSS_COMPILE ?= arm-none-eabi-
-ST_BOOTLOADER ?=
 CC = $(CROSS_COMPILE)gcc
 OBJCOPY = $(CROSS_COMPILE)objcopy
 
@@ -12,14 +11,9 @@ LDFLAGS_BOOT := $(LDFLAGS) -mfpu=fpv5-sp-d16 -mfloat-abi=hard \
 	-Wl,-T,platforms/stlinkv3-mini/stlinkv3-mini.ld -nostartfiles -lc \
 	-Wl,-Map=mapfile -mthumb -mcpu=cortex-m7 -Wl,-gc-sections \
 	-L../libopencm3/lib
-ifeq ($(ST_BOOTLOADER), 1)
-$(info  Load address 0x08004000 for original ST-LinkV2 Bootloader)
-CFLAGS += -DST_BOOTLOADER
-LDFLAGS = $(LDFLAGS_BOOT) -Wl,-Ttext=0x8004000
-else
+
 # TODO: relocate this address when debugging is finished
 LDFLAGS = $(LDFLAGS_BOOT) -Wl,-Ttext=0x8000000
-endif
 
 ifeq ($(ENABLE_DEBUG), 1)
 LDFLAGS += --specs=rdimon.specs
@@ -37,19 +31,14 @@ SRC += 	usbuart.c	\
 	serialno.c	\
 	timing.c	\
 	timing_stm32.c	\
+	traceswoasync.c	\
+	traceswodecode.c	\
 
-ifeq ($(ST_BOOTLOADER), 1)
-all:	blackmagic.bin
-else
-all:	blackmagic.bin blackmagic_dfu.bin blackmagic_dfu.hex dfu_upgrade.bin dfu_upgrade.hex
-endif
-blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f1.o stlink_common.o
+all:	blackmagic.bin blackmagic_dfu.bin blackmagic_dfu.hex
+
+blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o stlink_common.o
 	@echo "  LD      $@"
 	$(Q)$(CC) $^ -o $@ $(LDFLAGS_BOOT)
-
-dfu_upgrade.elf: dfu_upgrade.o dfucore.o dfu_f1.o  stlink_common.o
-	@echo "  LD      $@"
-	$(Q)$(CC) $^ -o $@ $(LDFLAGS)
 
 host_clean:
 	-$(Q)$(RM) *.bin *elf *hex

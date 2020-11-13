@@ -82,8 +82,8 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define LED_PORT_UART	GPIOC
 #define LED_UART	GPIO14
 
-//#define PLATFORM_HAS_TRACESWO	0
-#define NUM_TRACE_PACKETS		(128)		/* This is an 8K buffer */
+#define PLATFORM_HAS_TRACESWO	1
+#define NUM_TRACE_PACKETS		(16)
 #define TRACESWO_PROTOCOL		2			/* 1 = Manchester, 2 = NRZ / async */
 
 //# define SWD_CR   GPIO_CRH(SWDIO_PORT)
@@ -129,29 +129,30 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define USBUSART_TIM_ISR tim4_isr
 
 #define UART_PIN_SETUP() {\
-       rcc_periph_clock_enable(USBUSART_PORT_CLKEN); \
-       gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_TX_PIN);\
-       gpio_set_output_options(USBUSART_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, USBUSART_TX_PIN);\
-       gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_TX_PIN);\
-\
-       gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_RX_PIN);\
-       gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_RX_PIN);\
+	rcc_periph_clock_enable(USBUSART_PORT_CLKEN); \
+	gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_TX_PIN);\
+	gpio_set_output_options(USBUSART_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, USBUSART_TX_PIN);\
+	gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_TX_PIN);\
+	\
+	gpio_mode_setup(USBUSART_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, USBUSART_RX_PIN);\
+	gpio_set_af(USBUSART_PORT, USBUSART_PIN_AF, USBUSART_RX_PIN);\
 } while (0)
 
 
-/* On F103, only USART1 is on AHB2 and can reach 4.5 MBaud at 72 MHz.*/
-#define SWO_UART				USART1
-#define SWO_UART_DR				USART1_DR
-#define SWO_UART_CLK			RCC_USART1
-#define SWO_UART_PORT			GPIOA
-#define SWO_UART_RX_PIN			GPIO10
+#define SWO_UART			UART5
+#define SWO_UART_DR			UART5_RDR
+#define SWO_UART_CLK			RCC_UART5
+#define SWO_UART_PORT			GPIOD
+#define SWO_UART_RX_PIN			GPIO2
+#define SWO_UART_PIN_AF			GPIO_AF8
 
 /* This DMA channel is set by the USART in use */
-#define SWO_DMA_BUS				DMA1
-#define SWO_DMA_CLK				RCC_DMA1
-#define SWO_DMA_CHAN			DMA_CHANNEL5
-#define SWO_DMA_IRQ				NVIC_DMA1_CHANNEL5_IRQ
-#define SWO_DMA_ISR(x)			dma1_channel5_isr(x)
+#define SWO_DMA_BUS			DMA1
+#define SWO_DMA_CLK			RCC_DMA1
+#define SWO_DMA_CHAN			DMA_CHANNEL4
+#define SWO_DMA_STREAM			DMA_STREAM0
+#define SWO_DMA_IRQ			NVIC_DMA1_STREAM0_IRQ
+#define SWO_DMA_ISR(x)			dma1_stream0_isr(x)
 
 extern uint16_t led_idle_run;
 #define LED_IDLE_RUN            led_idle_run
