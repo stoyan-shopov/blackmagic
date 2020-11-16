@@ -66,11 +66,9 @@ static const struct usb_device_descriptor dev = {
 	.bDeviceClass = 0xEF,		/* Miscellaneous Device */
 	.bDeviceSubClass = 2,		/* Common Class */
 	.bDeviceProtocol = 1,		/* Interface Association */
-#ifdef LM4F
-	.bMaxPacketSize0 = 64,		/*Fixed for icdi*/
-#else
-	.bMaxPacketSize0 = 32,
-#endif
+	/* The USB specification requires that the control endpoint size is 64 bytes in size,
+	 * Best to have its size to 64 bytes in all cases. */
+	.bMaxPacketSize0 = 64,
 	.idVendor = 0x1D50,
 	.idProduct = 0x6018,
 	.bcdDevice = 0x0100,
@@ -389,10 +387,6 @@ static const struct usb_config_descriptor config = {
 	.bLength = USB_DT_CONFIGURATION_SIZE,
 	.bDescriptorType = USB_DT_CONFIGURATION,
 	.wTotalLength = 0,
-	/* HACK - demote the BMP usb interfaces to just the gdb (usb serial port) interface.
-	 * This is being done for the purposes of debugging the BMP for the
-	 * stlinkv3-mini target. When debugging is done, this will go away. */
-	.bNumInterfaces = 4,
 #if defined(PLATFORM_HAS_TRACESWO)
 	.bNumInterfaces = 6,
 #else
