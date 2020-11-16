@@ -89,11 +89,6 @@ static void do_spi_to_gpio(void)
 	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
 }
 
-static bool is_turnaround_neeed(int dir) __attribute__ ((optimize(3)));
-static bool is_turnaround_neeed(int dir)
-{
-	return dir != olddir;
-}
 
 static void swdptap_turnaround(int dir)
 {

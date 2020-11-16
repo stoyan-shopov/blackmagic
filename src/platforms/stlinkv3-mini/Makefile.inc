@@ -34,11 +34,7 @@ SRC += 	usbuart.c	\
 	traceswoasync.c	\
 	traceswodecode.c	\
 
-all:	blackmagic.bin blackmagic_dfu.bin blackmagic_dfu.hex
-
-blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o stlink_common.o
-	@echo "  LD      $@"
-	$(Q)$(CC) $^ -o $@ $(LDFLAGS_BOOT)
+all:	blackmagic.bin
 
 host_clean:
 	-$(Q)$(RM) *.bin *elf *hex

@@ -43,14 +43,12 @@ void gdb_if_putchar(unsigned char c, int flush)
 {
 	buffer_in[count_in++] = c;
 	if(flush || (count_in == CDCACM_PACKET_SIZE - 1)) {
-#if RUN_SFORTH == 0
 		/* Refuse to send if USB isn't configured, and
 		 * don't bother if nobody's listening */
 		if((cdcacm_get_config() != 1) || !cdcacm_get_dtr()) {
 			count_in = 0;
 			return;
 		}
-#endif
 		while(usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
 			buffer_in, count_in) == 0xffff);
 
@@ -106,11 +104,9 @@ unsigned char gdb_if_getchar(void)
 {
 
 	while (!(out_ptr < count_out)) {
-#if RUN_SFORTH == 0
 		/* Detach if port closed */
 		if (!cdcacm_get_dtr())
 			return 0x04;
-#endif
 		gdb_if_update_buf();
 	}
 
