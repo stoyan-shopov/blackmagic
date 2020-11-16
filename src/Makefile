@@ -12,10 +12,6 @@ endif
 CFLAGS += -Wall -Wextra -Wno-char-subscripts \
 	-std=gnu99 -g3 -MD -I./target \
 	-I. -Iinclude -I$(PLATFORM_DIR) \
-	-Isforth \
-	 -DSTACK_DEPTH="$(STACK_DEPTH)" \
-	 -DCORE_CELLS_COUNT="$(CORE_CELLS_COUNT)" \
-	 -DRUN_SFORTH="$(RUN_SFORTH)" \
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
