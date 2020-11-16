@@ -56,9 +56,8 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define SWDIO_PIN	TMS_PIN
 #define SWCLK_PIN	TCK_PIN
 
-#define SRST_PORT	GPIOB
-#define SRST_PIN_V1	GPIO1
-#define SRST_PIN_V2	GPIO0
+#define SRST_PORT	GPIOA
+#define SRST_PIN	GPIO6
 
 /* SPI5 pins on the stlinkv3-mini. */
 #define STLINKV3_MINI_SPI		SPI5
@@ -72,22 +71,9 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define	STLINKV3_MINI_SPI_SCK_PORT	GPIOH
 #define	STLINKV3_MINI_SPI_SCK_PIN	GPIO6
 
-#define LED_PORT	GPIOA
-/* Use PC14 for a "dummy" uart led. So we can observe at least with scope*/
-#define LED_PORT_UART	GPIOC
-#define LED_UART	GPIO14
-
-#define PLATFORM_HAS_TRACESWO	1
+#define PLATFORM_HAS_TRACESWO		1
 #define NUM_TRACE_PACKETS		(16)
 #define TRACESWO_PROTOCOL		2			/* 1 = Manchester, 2 = NRZ / async */
-
-//# define SWD_CR   GPIO_CRH(SWDIO_PORT)
-//# define SWD_CR_MULT (1 << ((14 - 8) << 2))
-
-/* These are used for oscilloscope measurements triggering. */
-#define SCOPE_TRIGGER_PORT		GPIOA
-#define SCOPE_TRIGGER_PIN		GPIO6
-#define PULSE_SCOPE_TRIGGER()		do { gpio_set(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); gpio_set(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); gpio_clear(SCOPE_TRIGGER_PORT, SCOPE_TRIGGER_PIN); } while(0)
 
 #define SWDIO_MODE_FLOAT()	do { gpio_mode_setup(SWDIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SWDIO_PIN); } while (0)
 #define SWDIO_MODE_DRIVE()	do {\
@@ -149,7 +135,12 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define SWO_DMA_IRQ			NVIC_DMA1_STREAM0_IRQ
 #define SWO_DMA_ISR(x)			dma1_stream0_isr(x)
 
+// TODO: dummy led definitions
 extern uint16_t led_idle_run;
+#define LED_PORT	GPIOA
+#define LED_PORT_UART	GPIOA
+#define LED_UART	GPIO10
+
 #define LED_IDLE_RUN            led_idle_run
 #define SET_RUN_STATE(state)	{running_status = (state);}
 #define SET_IDLE_STATE(state)	{gpio_set_val(LED_PORT, led_idle_run, state);}
