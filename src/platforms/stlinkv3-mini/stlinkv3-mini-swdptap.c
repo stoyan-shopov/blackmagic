@@ -26,7 +26,9 @@
  * gpio_set_output_options()) are very slow, they need replacement with
  * more straightforward code
  * - the serial clock (SWCK) on the SWD bus needs better handling now
- * that the hardware spi is being used instead of bitbanging
+ * that the hardware spi is being used instead of bitbanging; eventually,
+ * the SWD bus should be entirely driven by the hardware SPI. If necessary,
+ * idle SWD clocks may be inserted when driving the bus
  */
 
 #include <libopencm3/stm32/spi.h>
@@ -150,10 +152,8 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 	int len = ticks;
 
 	swdptap_turnaround(SWDIO_STATUS_FLOAT);
-//PULSE_SCOPE_TRIGGER();
 	if (ticks == 32 && 1)
 	{
-//gpio_clear(SWCLK_PORT, SWCLK_PIN);
 		uint32_t lsb = (gpio_get(SWDIO_PORT, SWDIO_PIN) ? 1 : 0);
 		do_gpio_to_spi(1, 0);
 		spi_set_data_size(STLINKV3_MINI_SPI, SPI_CR2_DS_15BIT);
@@ -166,7 +166,6 @@ static bool swdptap_seq_in_parity(uint32_t *ret, int ticks)
 		do_spi_to_gpio();
 // TODO: clean this.		
 #if 1
-PULSE_SCOPE_TRIGGER();
 gpio_set(SWCLK_PORT, SWCLK_PIN);
 gpio_set(SWCLK_PORT, SWCLK_PIN);
 gpio_set(SWCLK_PORT, SWCLK_PIN);

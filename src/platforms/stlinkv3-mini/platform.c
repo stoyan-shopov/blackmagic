@@ -81,18 +81,8 @@ void platform_init(void)
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
 
-	/* Configure and set the TPWR_EN pin. */
-	gpio_mode_setup(GPIOB, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO0);
-	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, GPIO0);
-	/* Output 5V. */
-	gpio_set(GPIOB, GPIO0);
-
-	/* Configure scope trigger signal. */
-	gpio_mode_setup(SCOPE_TRIGGER_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SCOPE_TRIGGER_PIN);
-	gpio_set_output_options(SCOPE_TRIGGER_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SCOPE_TRIGGER_PIN);
-
-	rcc_periph_clock_enable(RCC_SPI5);
 	/* Configure spi pins - used for swd bus driving. */
+	rcc_periph_clock_enable(RCC_SPI5);
 	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
 	gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
 	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
