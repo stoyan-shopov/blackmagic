@@ -130,6 +130,9 @@ static void usbuart_run(void)
 
 void usbuart_set_line_coding(struct usb_cdc_line_coding *coding)
 {
+	/* Some devices require that the usart is disabled before
+	 * changing the usart registers. */
+	usart_disable(USBUSART);
 	usart_set_baudrate(USBUSART, coding->dwDTERate);
 
 	if (coding->bParityType)
@@ -160,6 +163,7 @@ void usbuart_set_line_coding(struct usb_cdc_line_coding *coding)
 		usart_set_parity(USBUSART, USART_PARITY_EVEN);
 		break;
 	}
+	usart_enable(USBUSART);
 }
 
 void usbuart_usb_out_cb(usbd_device *dev, uint8_t ep)
@@ -221,11 +225,23 @@ void USBUSART_ISR(void)
 	err = USART_SR(USBUSART);
 #endif
 	char c = usart_recv(USBUSART);
+/* Note: on stm32f1 devices, the NE flag (start bit noise error)
+ * corresponds to flag NF in the ST documentation for other devices,
+ * they are at the same bit position. */
 #if !defined(USART_SR_NE) && defined(USART_ISR_NF)
 # define USART_SR_NE USART_ISR_NF
 #endif
 	if (err & (USART_FLAG_ORE | USART_FLAG_FE | USART_SR_NE))
+	{
+		/* Ignore errors, errors may occur in the case of mismatched baud rates. */
+#ifdef STM32F7
+		/* On stm32f7 devices, the overrun error must be cleared explicitly.
+		 * If not cleared, this error will cause the interrupt to be continuously
+		 * triggered. */
+		USART_ICR(USBUSART) = USART_ICR_ORECF;
+#endif
 		return;
+	}
 
 	/* Turn on LED */
 	gpio_set(LED_PORT_UART, LED_UART);
