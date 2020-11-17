@@ -41,6 +41,11 @@ int usbuart_debug_write(const char *buf, size_t len);
 
 #define PLATFORM_IDENT    "(STLINK-V3) "
 
+#define BOOTMAGIC0 0xb007da7a
+#define BOOTMAGIC1 0xbaadfeed
+
+#define DESIG_UNIQUE_ID_BASE DESIG_UNIQUE_ID_BASE_452
+
 /* Hardware definitions... */
 #define TDI_PORT	GPIOA
 #define TMS_PORT	GPIOF

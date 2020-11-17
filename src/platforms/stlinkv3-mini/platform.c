@@ -67,8 +67,11 @@ const char *platform_target_voltage(void)
 
 void platform_request_boot(void)
 {
-	// TODO: fill this in. Just hang for the moment.
-	while (1);
+	/* Use top of ITCM RAM as magic marker*/
+	volatile uint32_t *magic = (volatile uint32_t *) 0x3ff8;
+	magic[0] = BOOTMAGIC0;
+	magic[1] = BOOTMAGIC1;
+	scb_reset_system();
 }
 
 void platform_init(void)

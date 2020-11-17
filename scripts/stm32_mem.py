@@ -209,6 +209,8 @@ if __name__ == "__main__":
 	else :
 		if "F4" in product or "STLINK-V3" in product:
 			start = 0x8004000
+		elif b"STLinkV3" in product:
+			start = 0x8004000
 		else:
 			start = 0x8002000
 	addr = start
