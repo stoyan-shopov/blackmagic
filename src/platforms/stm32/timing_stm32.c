@@ -25,6 +25,7 @@
 
 uint8_t running_status;
 static volatile uint32_t time_ms;
+uint32_t swd_delay_cnt = 0;
 
 void platform_timing_init(void)
 {
@@ -60,3 +61,41 @@ uint32_t platform_time_ms(void)
 	return time_ms;
 }
 
+/* Assume some USED_SWD_CYCLES per clock
+ * and  CYCLES_PER_CNT Cycles per delay loop cnt with 2 delay loops per clock
+ */
+
+#if defined(STM32F7)
+/* Assumes D- and ICACHE enabled */
+# define USED_SWD_CYCLES 28
+# define CYCLES_PER_CNT 4
+#else
+/* Values for STM32F103 at 72 MHz */
+# define USED_SWD_CYCLES 22
+# define CYCLES_PER_CNT 10
+#endif
+void platform_max_frequency_set(uint32_t freq)
+{
+	int divisor = rcc_ahb_frequency - USED_SWD_CYCLES * freq;
+	if (divisor < 0) {
+		swd_delay_cnt = 0;
+	} else {
+		swd_delay_cnt = divisor / (2 * CYCLES_PER_CNT * freq);
+		if ((swd_delay_cnt * 2 * CYCLES_PER_CNT * freq) <
+			(unsigned int) divisor)
+			swd_delay_cnt++;
+	}
+#if defined(STM32F7)
+	if (swd_delay_cnt < 2)
+		PIN_MODE_FAST();
+	else
+		PIN_MODE_NORMAL();
+#endif
+}
+
+uint32_t platform_max_frequency_get(void)
+{
+	uint32_t ret = rcc_ahb_frequency;
+	ret /= USED_SWD_CYCLES + 2* CYCLES_PER_CNT * swd_delay_cnt;
+	return ret;
+}
