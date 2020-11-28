@@ -18,6 +18,8 @@ void platform_buffer_flush(void);
 #define PRODUCT_ID_BMP_BL        0x6017
 #define PRODUCT_ID_BMP           0x6018
 
+#define FREQ_FIXED 0xffffffff
+
 typedef enum bmp_type_s {
 	BMP_TYPE_NONE = 0,
 	BMP_TYPE_BMP,
