@@ -35,6 +35,7 @@ typedef struct bmp_info_s {
 	unsigned int vid;
 	unsigned int pid;
 	char dev;
+	bool is_jtag;
 	char serial[64];
 	char manufacturer[128];
 	char product[128];
