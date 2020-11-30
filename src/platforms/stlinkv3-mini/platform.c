@@ -40,6 +40,84 @@ uint16_t led_idle_run;
 uint16_t srst_pin;
 static uint32_t rev;
 
+#define SCB_CCR_IC_Pos                      17U                                           /*!< SCB CCR: Instruction cache enable bit Position */
+#define SCB_CCR_IC_Msk                     (1UL << SCB_CCR_IC_Pos)                        /*!< SCB CCR: Instruction cache enable bit Mask */
+
+#define SCB_CCR_DC_Pos                      16U                                           /*!< SCB CCR: Cache enable bit Position */
+#define SCB_CCR_DC_Msk                     (1UL << SCB_CCR_DC_Pos)                        /*!< SCB CCR: DC Mask */
+
+#define SCB_CCSIDR_NUMSETS_Msk             (0x7FFFUL << SCB_CCSIDR_NUMSETS_Pos)           /*!< SCB CCSIDR: NumSets Mask */
+#define SCB_CCSIDR_NUMSETS_Pos             13U                                            /*!< SCB CCSIDR: NumSets Position */
+
+#define SCB_CCSIDR_ASSOCIATIVITY_Pos        3U                                            /*!< SCB CCSIDR: Associativity Position */
+#define SCB_CCSIDR_ASSOCIATIVITY_Msk       (0x3FFUL << SCB_CCSIDR_ASSOCIATIVITY_Pos)      /*!< SCB CCSIDR: Associativity Mask */
+#define CCSIDR_WAYS(x)         (((x) & SCB_CCSIDR_ASSOCIATIVITY_Msk) >> SCB_CCSIDR_ASSOCIATIVITY_Pos)
+
+#define SCB_DCISW_SET_Pos                   5U                                            /*!< SCB DCISW: Set Position */
+#define SCB_DCISW_SET_Msk                  (0x1FFUL << SCB_DCISW_SET_Pos)                 /*!< SCB DCISW: Set Mask */
+
+#define SCB_DCISW_WAY_Pos                  30U                                            /*!< SCB DCISW: Way Position */
+#define SCB_DCISW_WAY_Msk                  (3UL << SCB_DCISW_WAY_Pos)                     /*!< SCB DCISW: Way Mask */
+
+#define CCSIDR_SETS(x)         (((x) & SCB_CCSIDR_NUMSETS_Msk      ) >> SCB_CCSIDR_NUMSETS_Pos      )
+
+static void __DSB(void)
+{
+  asm volatile ("dsb 0xF":::"memory");
+}
+
+static void __ISB(void)
+{
+  asm volatile ("isb 0xF":::"memory");
+}
+
+static void SCB_EnableICache (void)
+{
+	volatile uint32_t *SCB_ICIALLU =  (volatile uint32_t *)(SCB_BASE + 0x250);
+    __DSB();
+    __ISB();
+    *SCB_ICIALLU = 0UL;                     /* invalidate I-Cache */
+    __DSB();
+    __ISB();
+    SCB_CCR |=  (uint32_t)SCB_CCR_IC_Msk;  /* enable I-Cache */
+    __DSB();
+    __ISB();
+}
+
+static void SCB_EnableDCache (void)
+{
+	volatile uint32_t *SCB_CCSIDR = (volatile uint32_t *)(SCB_BASE +  0x80);
+	volatile uint32_t *SCB_CSSELR = (volatile uint32_t *)(SCB_BASE +  0x84);
+	volatile uint32_t *SCB_DCISW  =  (volatile uint32_t *)(SCB_BASE + 0x260);
+
+    uint32_t ccsidr;
+    uint32_t sets;
+    uint32_t ways;
+
+    *SCB_CSSELR = 0U; /*(0U << 1U) | 0U;*/  /* Level 1 data cache */
+    __DSB();
+
+    ccsidr = *SCB_CCSIDR;
+
+    sets = (uint32_t)(CCSIDR_SETS(ccsidr));
+    do {
+      ways = (uint32_t)(CCSIDR_WAYS(ccsidr));
+      do {
+        *SCB_DCISW = (((sets << SCB_DCISW_SET_Pos) & SCB_DCISW_SET_Msk) |
+                      ((ways << SCB_DCISW_WAY_Pos) & SCB_DCISW_WAY_Msk)  );
+        #if defined ( __CC_ARM )
+          __schedule_barrier();
+        #endif
+      } while (ways-- != 0U);
+    } while(sets-- != 0U);
+    __DSB();
+
+    SCB_CCR |=  (uint32_t)SCB_CCR_DC_Msk;  /* enable D-Cache */
+
+    __DSB();
+    __ISB();
+}
+
 int platform_hwversion(void)
 {
 	return rev;
@@ -79,6 +157,8 @@ void platform_init(void)
 
 	rcc_periph_clock_enable(RCC_APB2ENR_SYSCFGEN);
 	rcc_clock_setup_hse(rcc_3v3 + RCC_CLOCK_3V3_216MHZ, 25);
+	SCB_EnableICache();
+	SCB_EnableDCache();
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	rcc_periph_clock_enable(RCC_GPIOH);
