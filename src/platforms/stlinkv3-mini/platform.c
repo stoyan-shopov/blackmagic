@@ -164,6 +164,8 @@ void platform_init(void)
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
 
+	TMS_SET_MODE();
+
 	/* Configure spi pins - used for swd bus driving. */
 	rcc_periph_clock_enable(RCC_SPI5);
 	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
