@@ -40,7 +40,11 @@
 #include <libopencm3/stm32/dma.h>
 
 /* For speed this is set to the USB transfer size */
-#define FULL_SWO_PACKET	(512)
+#if  USB_DRIVER==stm32f723_usb_driver
+# define FULL_SWO_PACKET	(512)
+#else
+# define FULL_SWO_PACKET	(64)
+#endif
 
 static volatile uint32_t w;	/* Packet currently received via UART */
 static volatile uint32_t r;	/* Packet currently waiting to transmit to USB */
