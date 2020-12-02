@@ -163,7 +163,7 @@ void platform_init(void)
 	rcc_periph_clock_enable(RCC_GPIOB);
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
-
+  
 	TMS_SET_MODE();
 
 	/* Configure spi pins - used for swd bus driving. */

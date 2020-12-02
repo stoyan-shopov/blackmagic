@@ -39,6 +39,7 @@ SRC += 	usbuart.c	\
 	traceswoasync.c	\
 	traceswodecode.c	\
 
+
 ifeq ($(NO_BOOTLOADER), 1)
 all:	blackmagic.bin
 else
@@ -50,4 +51,3 @@ blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o
 endif
 host_clean:
 	-$(Q)$(RM) *.bin *elf *hex *.o
-
