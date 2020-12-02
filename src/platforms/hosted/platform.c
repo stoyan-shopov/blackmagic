@@ -36,6 +36,7 @@
 #include "ftdi_bmp.h"
 #include "jlink.h"
 #include "cmsis_dap.h"
+#include "version.h"
 
 #define VENDOR_ID_STLINK         0x0483
 #define PRODUCT_ID_STLINK_MASK   0xffe0
@@ -111,12 +112,16 @@ static int find_debuggers(	BMP_CL_OPTIONS_t *cl_opts,bmp_info_t *info)
 			libusb_free_device_list(devs, 1);
 			continue;
 		}
+		/* Exclude hubs from testing. Probably more classes could be excluded here!*/
+		if (desc.bDeviceClass == LIBUSB_CLASS_HUB) {
+			continue;
+		}
 		libusb_device_handle *handle;
 		res = libusb_open(dev, &handle);
 		if (res != LIBUSB_SUCCESS) {
 			if (!access_problems) {
-				DEBUG_INFO("INFO: Open USB %04x:%04x failed\n",
-						   desc.idVendor, desc.idProduct);
+				DEBUG_INFO("INFO: Open USB %04x:%04x class %2x failed\n",
+						   desc.idVendor, desc.idProduct, desc.bDeviceClass);
 				access_problems = true;
 			}
 			continue;
@@ -298,14 +303,16 @@ void platform_init(int argc, char **argv)
 	} else if (find_debuggers(&cl_opts, &info)) {
 		exit(-1);
 	}
-	DEBUG_WARN("Using %04x:%04x %s %s %s\n", info.vid, info.pid, info.serial,
+	DEBUG_INFO("BMP hosted %s\n for ST-Link V2/3, CMSIS_DAP, JLINK and "
+			   "LIBFTDI/MPSSE\n", FIRMWARE_VERSION);
+	DEBUG_INFO("Using %04x:%04x %s %s\n %s\n", info.vid, info.pid, info.serial,
 		   info.manufacturer,
 		   info.product);
 	switch (info.bmp_type) {
 	case BMP_TYPE_BMP:
 		if (serial_open(&cl_opts, info.serial))
 			exit(-1);
-		remote_init(true);
+		remote_init();
 		break;
 	case BMP_TYPE_STLINKV2:
 		if (stlink_init( &info))
@@ -338,6 +345,8 @@ void platform_init(int argc, char **argv)
 
 int platform_adiv5_swdp_scan(void)
 {
+	info.is_jtag = false;
+	platform_max_frequency_set(cl_opts.opt_max_swj_frequency);
 	switch (info.bmp_type) {
 	case BMP_TYPE_BMP:
 	case BMP_TYPE_LIBFTDI:
@@ -347,7 +356,9 @@ int platform_adiv5_swdp_scan(void)
 	{
 		target_list_free();
 		ADIv5_DP_t *dp = (void*)calloc(1, sizeof(*dp));
-		if (!stlink_enter_debug_swd(&info, dp)) {
+		if (stlink_enter_debug_swd(&info, dp)) {
+			free(dp);
+		} else {
 			adiv5_dp_init(dp);
 			if (target_list)
 				return 1;
@@ -358,7 +369,9 @@ int platform_adiv5_swdp_scan(void)
 	{
 		target_list_free();
 		ADIv5_DP_t *dp = (void*)calloc(1, sizeof(*dp));
-		if (!dap_enter_debug_swd(dp)) {
+		if (dap_enter_debug_swd(dp)) {
+			free(dp);
+		} else {
 			adiv5_dp_init(dp);
 			if (target_list)
 				return 1;
@@ -398,6 +411,8 @@ void platform_add_jtag_dev(int i, const jtag_dev_t *jtag_dev)
 
 int platform_jtag_scan(const uint8_t *lrlens)
 {
+	info.is_jtag = true;
+	platform_max_frequency_set(cl_opts.opt_max_swj_frequency);
 	switch (info.bmp_type) {
 	case BMP_TYPE_BMP:
 	case BMP_TYPE_LIBFTDI:
@@ -526,6 +541,61 @@ bool platform_srst_get_val(void)
 	case BMP_TYPE_JLINK:
 		return jlink_srst_get_val(&info);
 	default:
+		break;
+	}
+	return false;
+}
+
+void platform_max_frequency_set(uint32_t freq)
+{
+	if (!freq)
+		freq = 1; /* No division by 0 */
+	switch (info.bmp_type) {
+	case BMP_TYPE_BMP:
+		remote_max_frequency_set(freq);
+		break;
+	case BMP_TYPE_CMSIS_DAP:
+		dap_swj_clock(freq);
+		break;
+	case BMP_TYPE_LIBFTDI:
+		libftdi_max_frequency_set(freq);
+		break;
+	case BMP_TYPE_STLINKV2:
+		stlink_max_frequency_set(&info, freq);
+		break;
+	case BMP_TYPE_JLINK:
+		jlink_max_frequency_set(&info, freq);
+		break;
+	default:
+		DEBUG_WARN("Setting max SWJ frequency not yet implemented\n");
+		break;
+	}
+	uint32_t max_freq = platform_max_frequency_get();
+	if (max_freq == FREQ_FIXED)
+		DEBUG_INFO("Device has fixed frequency for %s\n",
+				   (info.is_jtag) ? "JTAG" : "SWD" );
+	else
+		DEBUG_INFO("Speed set to %7.4f MHz for %s\n",
+				   platform_max_frequency_get() / 1000000.0,
+				   (info.is_jtag) ? "JTAG" : "SWD" );
+}
+
+uint32_t platform_max_frequency_get(void)
+{
+	switch (info.bmp_type) {
+	case BMP_TYPE_BMP:
+		return remote_max_frequency_get();
+	case BMP_TYPE_CMSIS_DAP:
+		return dap_swj_clock(0);
+		break;
+	case BMP_TYPE_LIBFTDI:
+		return libftdi_max_frequency_get();
+	case BMP_TYPE_STLINKV2:
+		return stlink_max_frequency_get(&info);
+	case BMP_TYPE_JLINK:
+		return jlink_max_frequency_get(&info);
+	default:
+		DEBUG_WARN("Reading max SWJ frequency not yet implemented\n");
 		break;
 	}
 	return false;

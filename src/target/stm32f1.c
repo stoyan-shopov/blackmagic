@@ -118,11 +118,15 @@ static void stm32f1_add_flash(target *t,
 
 bool stm32f1_probe(target *t)
 {
-	if (t->t_designer == AP_DESIGNER_ARM)
+	uint16_t stored_idcode = t->idcode;
+	if ((t->cpuid & CPUID_PARTNO_MASK) == CORTEX_M0)
+		t->idcode = target_mem_read32(t, DBGMCU_IDCODE_F0) & 0xfff;
+	else
 		t->idcode = target_mem_read32(t, DBGMCU_IDCODE) & 0xfff;
 	size_t flash_size;
 	size_t block_size = 0x400;
 	switch(t->idcode) {
+	case 0x29b: /* CS clone */
 	case 0x410:  /* Medium density */
 	case 0x412:  /* Low density */
 	case 0x420:  /* Value Line, Low-/Medium density */
@@ -191,6 +195,7 @@ bool stm32f1_probe(target *t)
 		block_size = 0x800;
 		break;
 	default:     /* NONE */
+		t->idcode = stored_idcode;
 		return false;
 	}
 

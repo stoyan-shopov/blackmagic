@@ -27,7 +27,6 @@
 #include "gpio.h"
 #include "timing.h"
 #include "timing_stm32.h"
-#include "version.h"
 
 #include <libopencm3/cm3/common.h>
 #include <libopencm3/stm32/f1/memorymap.h>
@@ -40,11 +39,12 @@ extern bool debug_bmp;
 int usbuart_debug_write(const char *buf, size_t len);
 #endif
 
-#define BOARD_IDENT       "Black Magic Probe (STLINKV3-MINI), (Firmware " FIRMWARE_VERSION ")"
-#define BOARD_IDENT_DFU   "Black Magic (Upgrade) for STLink/Discovery, (Firmware " FIRMWARE_VERSION ")"
-#define BOARD_IDENT_UPD   "Black Magic (DFU Upgrade) for STLink/Discovery, (Firmware " FIRMWARE_VERSION ")"
-#define DFU_IDENT         "Black Magic Firmware Upgrade (STLINK)"
-#define UPD_IFACE_STRING  "@Internal Flash   /0x08000000/8*001Kg"
+#define PLATFORM_IDENT    "(STLINK-V3) "
+
+#define BOOTMAGIC0 0xb007da7a
+#define BOOTMAGIC1 0xbaadfeed
+
+#define DESIG_UNIQUE_ID_BASE DESIG_UNIQUE_ID_BASE_452
 
 /* Hardware definitions... */
 #define TDI_PORT	GPIOA
@@ -80,12 +80,36 @@ int usbuart_debug_write(const char *buf, size_t len);
 #define NUM_TRACE_PACKETS		(16)
 #define TRACESWO_PROTOCOL		2			/* 1 = Manchester, 2 = NRZ / async */
 
-#define SWDIO_MODE_FLOAT()	do { gpio_mode_setup(SWDIO_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, SWDIO_PIN); } while (0)
-#define SWDIO_MODE_DRIVE()	do {\
-	gpio_mode_setup(SWDIO_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, SWDIO_PIN);\
-	gpio_set_output_options(SWDIO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, SWDIO_PIN);\
-} while (0)
-#define TMS_SET_MODE()		SWDIO_MODE_DRIVE()
+#define SWDIO_MODER   GPIO_MODER(TMS_PORT)
+#define SWDIO_MODER_MULT (1 << (9 << 1))
+
+#define TMS_SET_MODE()\
+	gpio_mode_setup(TMS_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TMS_PIN);	\
+	gpio_set_output_options(TMS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TMS_PIN);
+
+#define SWDIO_MODE_FLOAT()	do {				\
+		uint32_t moder = SWDIO_MODER;			\
+		moder &= ~(0x3 * SWDIO_MODER_MULT);		\
+		SWDIO_MODER = moder;					\
+	} while(0)
+
+#define SWDIO_MODE_DRIVE()   do {				\
+		uint32_t moder = SWDIO_MODER;			\
+		moder |= (1 * SWDIO_MODER_MULT);		\
+		SWDIO_MODER = moder;					\
+	} while(0)
+
+#define PIN_MODE_FAST()  do {											\
+		gpio_set_output_options(TMS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, TMS_PIN); \
+		gpio_set_output_options(TCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, TCK_PIN); \
+		gpio_set_output_options(TDO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_25MHZ, TDO_PIN); \
+	} while(0)
+
+#define PIN_MODE_NORMAL() do {											\
+		gpio_set_output_options(TMS_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TMS_PIN); \
+		gpio_set_output_options(TCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TCK_PIN); \
+		gpio_set_output_options(TDO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TDO_PIN);	\
+	} while(0)
 
 #define USB_DRIVER      stm32f723_usb_driver
 #define USB_IRQ	        NVIC_OTG_HS_IRQ

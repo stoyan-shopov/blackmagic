@@ -10,13 +10,15 @@
 char *platform_ident(void);
 void platform_buffer_flush(void);
 
-#define PLATFORM_IDENT() "NONE"
+#define PLATFORM_IDENT     "(PC-Hosted) "
 #define SET_IDLE_STATE(x)
 #define SET_RUN_STATE(x)
 
 #define VENDOR_ID_BMP            0x1d50
 #define PRODUCT_ID_BMP_BL        0x6017
 #define PRODUCT_ID_BMP           0x6018
+
+#define FREQ_FIXED 0xffffffff
 
 typedef enum bmp_type_s {
 	BMP_TYPE_NONE = 0,
@@ -35,6 +37,7 @@ typedef struct bmp_info_s {
 	unsigned int vid;
 	unsigned int pid;
 	char dev;
+	bool is_jtag;
 	char serial[64];
 	char manufacturer[128];
 	char product[128];

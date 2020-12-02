@@ -49,6 +49,7 @@ static bool cmd_help(target *t, int argc, char **argv);
 
 static bool cmd_jtag_scan(target *t, int argc, char **argv);
 static bool cmd_swdp_scan(target *t, int argc, char **argv);
+static bool cmd_frequency(target *t, int argc, char **argv);
 static bool cmd_targets(target *t, int argc, char **argv);
 static bool cmd_morse(target *t, int argc, char **argv);
 static bool cmd_halt_timeout(target *t, int argc, const char **argv);
@@ -70,6 +71,7 @@ const struct command_s cmd_list[] = {
 	{"help", (cmd_handler)cmd_help, "Display help for monitor commands"},
 	{"jtag_scan", (cmd_handler)cmd_jtag_scan, "Scan JTAG chain for devices" },
 	{"swdp_scan", (cmd_handler)cmd_swdp_scan, "Scan SW-DP for devices" },
+	{"frequency", (cmd_handler)cmd_frequency, "set minimum high and low times" },
 	{"targets", (cmd_handler)cmd_targets, "Display list of available targets" },
 	{"morse", (cmd_handler)cmd_morse, "Display morse error message" },
 	{"halt_timeout", (cmd_handler)cmd_halt_timeout, "Timeout (ms) to wait until Cortex-M is halted: (Default 2000)" },
@@ -131,16 +133,18 @@ int command_process(target *t, char *cmd)
 	return target_command(t, argc, argv);
 }
 
+#define BOARD_IDENT "Black Magic Probe" PLATFORM_IDENT FIRMWARE_VERSION
+
 bool cmd_version(target *t, int argc, char **argv)
 {
 	(void)t;
 	(void)argc;
 	(void)argv;
+	gdb_out(BOARD_IDENT);
 #if PC_HOSTED == 1
-	gdb_outf("Black Magic Probe, PC-Hosted for " PLATFORM_IDENT()
-			 ", Version " FIRMWARE_VERSION "\n");
+	gdb_outf("\n for %s, %s\n", info.manufacturer, info.product);
 #else
-	gdb_outf("Black Magic Probe (Firmware " FIRMWARE_VERSION ") (Hardware Version %d)\n", platform_hwversion());
+	gdb_outf(", Hardware Version %d\n", platform_hwversion());
 #endif
 	gdb_out("Copyright (C) 2015  Black Sphere Technologies Ltd.\n");
 	gdb_out("License GPLv3+: GNU GPL version 3 or later "
@@ -250,6 +254,27 @@ bool cmd_swdp_scan(target *t, int argc, char **argv)
 
 	cmd_targets(NULL, 0, NULL);
 	morse(NULL, false);
+	return true;
+
+}
+
+bool cmd_frequency(target *t, int argc, char **argv)
+{
+	(void)t;
+	if (argc == 2) {
+		char *p;
+		uint32_t frequency = strtol(argv[1], &p, 10);
+		switch(*p) {
+		case 'k':
+			frequency *= 1000;
+			break;
+		case 'M':
+			frequency *= 1000*1000;
+			break;
+		}
+		platform_max_frequency_set(frequency);
+	}
+	gdb_outf("Max SWJ freq %08" PRIx32 "\n", platform_max_frequency_get());
 	return true;
 
 }
