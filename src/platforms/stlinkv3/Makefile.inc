@@ -9,11 +9,10 @@ CFLAGS += -mcpu=cortex-m7 -mthumb -mfpu=fpv5-sp-d16 -mfloat-abi=hard \
 	-I platforms/stm32
 LDFLAGS_BOOT := $(LDFLAGS) -mfpu=fpv5-sp-d16 -mfloat-abi=hard \
 	--specs=nano.specs -lopencm3_stm32f7 \
-	-Wl,-T,platforms/stlinkv3-mini/stlinkv3-mini.ld -nostartfiles -lc \
+	-Wl,-T,platforms/stlinkv3/stlinkv3.ld -nostartfiles -lc \
 	-Wl,-Map=mapfile -mthumb -mcpu=cortex-m7 -Wl,-gc-sections \
 	-L../libopencm3/lib
 
-# TODO: relocate this address when debugging is finished
 LDFLAGS = $(LDFLAGS_BOOT)
 CFLAGS +=  -DUSE_ST_SERIAL
 ifneq ($(NO_BOOTLOADER), 1)
@@ -26,10 +25,7 @@ else
 LDFLAGS += --specs=nosys.specs
 endif
 
-#SRC += stlinkv3-mini-swdptap.c
-
 VPATH += platforms/stm32
-#HAS_SWDPTAP_LL = 1
 
 SRC += 	usbuart.c	\
 	cdcacm.c	\
@@ -38,7 +34,6 @@ SRC += 	usbuart.c	\
 	timing_stm32.c	\
 	traceswoasync.c	\
 	traceswodecode.c	\
-
 
 ifeq ($(NO_BOOTLOADER), 1)
 all:	blackmagic.bin

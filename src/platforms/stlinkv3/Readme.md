@@ -25,8 +25,18 @@ git checkout -b stlinkv3-mini-clean v3mini-origin/stlinkv3-mini-clean
 # Initialize and update references to the libopencm3 submodule
 git submodule init
 git submodule update
-# Build the firmware for the stlinkv3-mini host
-make PROBE_HOST=stlinkv3-mini
+```
+
+If you intend to use the DFU bootloader, build the firwmare with bootloader
+support enabled, which is the default:
+```
+make PROBE_HOST=stlinkv3
+```
+Alternatively, if you do not want to use the DFU bootloader (may be
+more convenient during development and debugging the BMP firmware), build
+with DFU bootloader support disabled:
+```
+make PROBE_HOST=stlinkv3 NO_BOOTLOADER=1
 ```
 
 What has been done so far?
@@ -52,13 +62,14 @@ theoretic maximum of UART5 used for trace capture is 27 Megabits/second.
 IN-endpoint usb data rate of 8 Megabytes/second are observed. That is 2 usb
 packets of size 512 bytes, each usb microframe (125 us).
 
+- Thanks to Uwe Bonnes <insert-contact-here>, DFU firmware update is available
+
 What remains to be done?
 
 Quite much. Here is (an unexhaustive) list:
 - code needs to be cleaned up
 - more testing is needed
 - documentation needs improving
-- DFU
 - the reset line is not being driven
 - the jtag pins are not used
 - the linkage editor descriptor file used is not the correct one

@@ -1,7 +1,6 @@
-PROBE_HOST ?= stlinkv3-mini
+PROBE_HOST ?= native
 PLATFORM_DIR = platforms/$(PROBE_HOST)
 VPATH += $(PLATFORM_DIR) target
-
 ENABLE_DEBUG ?=
 
 ifneq ($(V), 1)
@@ -9,9 +8,9 @@ MAKEFLAGS += --no-print-dir
 Q := @
 endif
 
-CFLAGS += -Wall -Wextra -Wno-char-subscripts \
+CFLAGS += -Wall -Wextra -Werror -Wno-char-subscripts \
 	-std=gnu99 -g3 -MD -I./target \
-	-I. -Iinclude -I$(PLATFORM_DIR) \
+	-I. -Iinclude -I$(PLATFORM_DIR)
 
 ifeq ($(ENABLE_DEBUG), 1)
 CFLAGS += -DENABLE_DEBUG
@@ -81,10 +80,7 @@ endif
 ifdef PC_HOSTED
 CFLAGS += -DPC_HOSTED=1
 else
-ifndef HAS_SWDPTAP_LL
-SRC += swdptap.c
-endif
-SRC += jtagtap.c
+SRC += swdptap.c jtagtap.c
 CFLAGS += -DPC_HOSTED=0
 VPATH += platforms/common
 CFLAGS += -Iplatforms/common
