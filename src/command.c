@@ -98,7 +98,7 @@ bool connect_assert_srst;
 #if defined(PLATFORM_HAS_DEBUG) && (PC_HOSTED == 0)
 bool debug_bmp;
 #endif
-long cortexm_wait_timeout = 2000; /* Timeout to wait for Cortex to react on halt command. */
+unsigned cortexm_wait_timeout = 2000; /* Timeout to wait for Cortex to react on halt command. */
 
 int command_process(target *t, char *cmd)
 {
@@ -142,7 +142,9 @@ bool cmd_version(target *t, int argc, char **argv)
 	(void)argv;
 	gdb_out(BOARD_IDENT);
 #if PC_HOSTED == 1
-	gdb_outf("\n for %s, %s\n", info.manufacturer, info.product);
+	char ident[256];
+	gdb_ident(ident, sizeof(ident));
+	gdb_outf("\n for %s\n", ident);
 #else
 	gdb_outf(", Hardware Version %d\n", platform_hwversion());
 #endif
@@ -274,7 +276,11 @@ bool cmd_frequency(target *t, int argc, char **argv)
 		}
 		platform_max_frequency_set(frequency);
 	}
-	gdb_outf("Max SWJ freq %08" PRIx32 "\n", platform_max_frequency_get());
+	uint32_t freq = platform_max_frequency_get();
+	if (freq == FREQ_FIXED)
+		gdb_outf("SWJ freq fixed\n");
+	else
+		gdb_outf("Max SWJ freq %08" PRIx32 "\n", freq);
 	return true;
 
 }

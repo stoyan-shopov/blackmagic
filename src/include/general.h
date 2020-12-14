@@ -50,6 +50,8 @@ enum BMP_DEBUG {
 	BMP_DEBUG_STDOUT = 0x8000,
 };
 
+#define FREQ_FIXED 0xffffffff
+
 #if PC_HOSTED == 0
 /* For BMP debug output on a firmware BMP platform, using
  * BMP PC-Hosted is the preferred way. Printing DEBUG_WARN

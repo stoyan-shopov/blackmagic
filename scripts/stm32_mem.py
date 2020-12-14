@@ -2,7 +2,7 @@
 #
 # stm32_mem.py: STM32 memory access using USB DFU class
 # Copyright (C) 2011  Black Sphere Technologies
-# Copyright (C) 2017  Uwe Bonnes (bon@elektron.ikp.physik.tu-darmstadt.de)
+# Copyright (C) 2017, 2020  Uwe Bonnes (bon@elektron.ikp.physik.tu-darmstadt.de)
 # Written by Gareth McMullin <gareth@blacksphere.co.nz>
 #
 # This program is free software: you can redistribute it and/or modify

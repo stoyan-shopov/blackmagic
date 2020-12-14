@@ -56,7 +56,6 @@ typedef struct BMP_CL_OPTIONS_s {
 	uint32_t opt_flash_start;
 	uint32_t opt_max_swj_frequency;
 	size_t opt_flash_size;
-	char     *opt_idstring;
 }BMP_CL_OPTIONS_t;
 
 void cl_init(BMP_CL_OPTIONS_t *opt, int argc, char **argv);

@@ -154,11 +154,9 @@ uint32_t remote_max_frequency_get(void)
 
 	s = platform_buffer_read(construct, REMOTE_MAX_MSG_SIZE);
 
-	if ((!s) || (construct[0] == REMOTE_RESP_ERR)) {
-		DEBUG_WARN("platform_freq_get failed, error %s\n",
-				   s ? (char *)&(construct[1]) : "unknown");
-      exit(-1);
-    }
+	if ((!s) || (construct[0] == REMOTE_RESP_ERR))
+		return FREQ_FIXED;
+
 	uint32_t freq[1];
 	unhexify(freq, (const char*)&construct[1], 4);
 	return freq[0];
