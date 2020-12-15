@@ -46,3 +46,18 @@ blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o
 endif
 host_clean:
 	-$(Q)$(RM) *.bin *elf *hex *.o
+
+# Add local libopencm3 patched usb driver.
+SRC += usb_dwc_common.c
+SRC += usb_f723.c
+
+# The replacement libopencm3 usb_dwc_common.c driver
+# needs some extra include paths within libopencm3
+usb_dwc_common.o: usb_dwc_common.c
+	@echo "  CC      $<"
+	$(Q)$(CC) -I../libopencm3/lib/usb/ $(CFLAGS) $(OPT_FLAGS) -c $< -o $@
+# TODO: maybe it is better that the 'usb_f723.c' usb driver initialization code
+# is merged into 'platform.c'
+usb_f723.o: usb_f723.c
+	@echo "  CC      $<"
+	$(Q)$(CC) -I../libopencm3/lib/usb/ $(CFLAGS) $(OPT_FLAGS) -c $< -o $@

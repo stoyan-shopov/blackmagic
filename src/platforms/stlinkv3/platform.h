@@ -111,6 +111,7 @@ int usbuart_debug_write(const char *buf, size_t len);
 		gpio_set_output_options(TDO_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TDO_PIN);	\
 	} while(0)
 
+extern const struct _usbd_driver stm32f723_usb_driver;
 #define USB_DRIVER      stm32f723_usb_driver
 #define USB_IRQ	        NVIC_OTG_HS_IRQ
 #define USB_ISR	        otg_hs_isr
