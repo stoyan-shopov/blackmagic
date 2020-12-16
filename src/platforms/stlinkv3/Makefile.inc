@@ -32,7 +32,7 @@ SRC += 	usbuart.c	\
 	serialno.c	\
 	timing.c	\
 	timing_stm32.c	\
-	traceswoasync.c	\
+	traceswoasync_f723.c	\
 	traceswodecode.c	\
 
 ifeq ($(NO_BOOTLOADER), 1)

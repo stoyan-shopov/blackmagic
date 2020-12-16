@@ -45,11 +45,6 @@ static uint32_t emu_speed_kHz;
 static uint16_t emu_min_divisor;
 static uint16_t emu_current_divisor;
 
-static uint32_t emu_caps;
-static uint32_t emu_speed_kHz;
-static uint16_t emu_min_divisor;
-static uint16_t emu_current_divisor;
-
 static void jlink_print_caps(bmp_info_t *info)
 {
 	uint8_t cmd[1] = {CMD_GET_CAPS};

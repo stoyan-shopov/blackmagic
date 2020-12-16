@@ -136,6 +136,7 @@ bool  libftdi_swd_possible(bool *do_mpsse, bool *direct_bb_swd);
 void libftdi_max_frequency_set(uint32_t freq);
 uint32_t libftdi_max_frequency_get(void);
 #endif
+
 #define MPSSE_SK 1
 #define PIN0     1
 #define MPSSE_DO 2
