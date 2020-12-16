@@ -51,6 +51,21 @@ host_clean:
 SRC += usb_dwc_common.c
 SRC += usb_f723.c
 
+# Note: below are provided some customized versions of
+# files from the libopencm3 libraries. It would be ideal
+# if some day these go in libopencm3 master, but for the
+# time being this is a convenient solution.
+#
+# Note that there is something very odd about linking these
+# libopencm3 replacement files and libopencm3 together.
+# If all of the externally visible symbols from these
+# replacement files are kept (e.g., no externally visible
+# functions or data objects are removed), then linking
+# mysteriously succeeds. However, removing some externally
+# symbols cause linking to (expectedly) fail, giving an
+# error of multiple symbol definitions. The strange
+# thing is why linking succeeds in the case described above.
+
 # The replacement libopencm3 usb_dwc_common.c driver
 # needs some extra include paths within libopencm3.
 usb_dwc_common.o: usb_dwc_common.c
