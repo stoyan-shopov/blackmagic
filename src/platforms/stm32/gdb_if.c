@@ -30,7 +30,36 @@ static uint32_t count_out;
 static uint32_t count_in;
 static uint32_t out_ptr;
 static uint8_t buffer_out[CDCACM_PACKET_SIZE];
-static uint8_t buffer_in[CDCACM_PACKET_SIZE];
+/*
+ * When receiving data packets that are larger than the usb IN endpoint
+ * size, the usb host expects that the large data packet is split into
+ * smaller data packets, of length equal to the usb IN endpoint size, and
+ * only the last packet must be of length strictly smaller than the usb
+ * IN endpoint size. In case that the large data packet is an integral
+ * multiple of the usb IN endpoint size, the last packet sent to the host
+ * must be of length zero, so that the usb host recognizes the completion
+ * of the transfer of the large data packet. Otherwise, some usb hosts
+ * may wait indefinitely waiting for a short packet.
+ *
+ * Currently, the libopencm3 'usbd_ep_write_packet()' function cannot
+ * report a successful write of a zero-length packet - it
+ * returns the number of bytes written, on success, and 0 on failure.
+ * This makes it impossible to check for a successful write of a
+ * zero-length packet.
+ *
+ * So, the code here used to perform a workaround, by sending a packet
+ * of 1 zero byte, instead of a zero-length packet. Generally, this is
+ * not correct for generic usb cdcacm devices, but in this particular
+ * case this does not cause problems, because the gdb communication is
+ * packetized, and these 1 byte, zero data packets, are silently ignored
+ * by gdb.
+ *
+ * To simplify the code, set the usb IN buffer for the gdb cdcacm interface to
+ * be less than the advertised usb IN endpoint size. This makes sure
+ * that packets of size equal to the usb IN endpoint size will never
+ * be sent to the usb host, and therefore sending zero-length packets
+ * will never be needed.  */
+static uint8_t buffer_in[CDCACM_PACKET_SIZE - 1];
 #ifdef STM32F4
 static volatile uint32_t count_new;
 static uint8_t double_buffer_out[CDCACM_PACKET_SIZE];
@@ -39,7 +68,7 @@ static uint8_t double_buffer_out[CDCACM_PACKET_SIZE];
 void gdb_if_putchar(unsigned char c, int flush)
 {
 	buffer_in[count_in++] = c;
-	if(flush || (count_in == CDCACM_PACKET_SIZE)) {
+	if(flush || (count_in == sizeof buffer_in)) {
 		/* Refuse to send if USB isn't configured, and
 		 * don't bother if nobody's listening */
 		if((cdcacm_get_config() != 1) || !cdcacm_get_dtr()) {
@@ -49,15 +78,6 @@ void gdb_if_putchar(unsigned char c, int flush)
 		while(usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
 			buffer_in, count_in) <= 0);
 
-		if (flush && (count_in == CDCACM_PACKET_SIZE)) {
-			/* We need to send an empty packet for some hosts
-			 * to accept this as a complete transfer. */
-			/* libopencm3 needs a change for us to confirm when
-			 * that transfer is complete, so we just send a packet
-			 * containing a null byte for now.
-			 */
-			while (usbd_ep_write_packet(usbdev, CDCACM_GDB_ENDPOINT,
-				"\0", 1) <= 0);
 		}
 
 		count_in = 0;

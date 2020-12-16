@@ -104,12 +104,16 @@ static void usbuart_run(void)
 	}
 	else
 	{
-		uint8_t packet_buf[CDCACM_PACKET_SIZE];
+		/* Deliberately make the usb transfer buffer less than the
+		 * usb cdcacm data IN endpoint size, so that sending of
+		 * zero-length packets (currently not supported by libopencm3)
+		 * is not necessary */
+		uint8_t packet_buf[CDCACM_PACKET_SIZE - 1];
 		uint8_t packet_size = 0;
 		uint8_t buf_out = buf_rx_out;
 
 		/* copy from uart FIFO into local usb packet buffer */
-		while (buf_rx_in != buf_out && packet_size < CDCACM_PACKET_SIZE)
+		while (buf_rx_in != buf_out && packet_size < sizeof packet_buf)
 		{
 			packet_buf[packet_size++] = buf_rx[buf_out++];
 
