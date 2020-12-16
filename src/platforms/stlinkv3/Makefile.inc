@@ -40,7 +40,8 @@ all:	blackmagic.bin
 else
 all:	blackmagic.bin blackmagic_dfu.bin blackmagic_dfu.hex
 
-blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o
+blackmagic_dfu.elf: usbdfu.o dfucore.o dfu_f4.o usb_f723.o \
+		usb_dwc_common.o usb_control.o
 	@echo "  LD      $@"
 	$(Q)$(CC) $^ -o $@ $(LDFLAGS_BOOT)
 endif
@@ -49,6 +50,7 @@ host_clean:
 
 # Add local libopencm3 patched usb driver.
 SRC += usb_dwc_common.c
+SRC += usb_control.c
 SRC += usb_f723.c
 
 # Note: below are provided some customized versions of
