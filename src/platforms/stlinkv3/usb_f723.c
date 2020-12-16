@@ -34,7 +34,7 @@
  * or definitions that need hacking in order to use here.
  */
 /* ??? This bit is present in the st header files, but I could not find it described in the documentation. */
-#define OTG_GCCFG_PHYHSEN	(1 << 23)
+#define OTG_GCCFG_PHYHSEN		(1 << 23)
 #define OTG_PHYC_LDO_DISABLE		(1 << 2)
 #define OTG_PHYC_LDO_STATUS		(1 << 1)
 
@@ -56,8 +56,7 @@
 
 /* Yes, this is unpleasant. It does not belong here. */
 #define _REG_BIT(base, bit)             (((base) << 5) + (bit))
-/* STM32F7x3xx and STM32F730xx devices have an internal usb high-speed
- * usb phy controller */
+/* STM32F7x3xx and STM32F730xx devices have an internal usb high-speed usb phy controller */
 enum
 {
 	RCC_OTGPHYC	= _REG_BIT(0x44, 31),
@@ -87,8 +86,10 @@ const struct _usbd_driver stm32f723_usb_driver = {
 	.rx_fifo_size = RX_FIFO_SIZE,
 };
 
-/** Initialize the USB device controller hardware of the STM32. */
-/* Note: shopov - I compiled this initialization code from the libopencm3 usb_f207.c
+/*
+ * Initialize the USB device controller hardware of the STM32.
+ *
+ * Note: this initialization code was compiled from the libopencm3 usb_f207.c
  * source, and the st cube sources. Note that the st manuals state that some delays
  * are necessary at certain places. This code works for usb hosts that I tested on
  * without the delays, but this is bending the rules.
@@ -102,7 +103,7 @@ static usbd_device *stm32f723_usbd_init(void)
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO14 | GPIO15);
 	gpio_set_af(GPIOB, GPIO_AF12, GPIO14 | GPIO15);
 
-	rcc_periph_clock_enable(RCC_OTGPHYC);
+	rcc_periph_clock_enable((enum rcc_periph_clken) RCC_OTGPHYC);
 	rcc_periph_clock_enable(RCC_OTGHSULPI);
 
 	// TODO - check the preemption and subpriority, they are unified here
