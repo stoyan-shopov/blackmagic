@@ -47,12 +47,14 @@
 
 usbd_device * usbdev;
 
-/* XXX: this does not belong here! */
-enum
-{
-	TRACE_ENDPOINT_SIZE	= 512,
-};
-
+/* TODO: it looks cleaner to move the trace endpoint size definition
+ * in the platform.h files for different targets, because this definition
+ * must be kept in sync with the values used in the 'traceswo(async)' files. */
+#if defined(STM32F7)
+#define TRACE_ENDPOINT_SIZE	512
+#else
+#define TRACE_ENDPOINT_SIZE	64
+#endif
 
 static int configured;
 static int cdcacm_gdb_dtr = 1;
@@ -66,8 +68,9 @@ static const struct usb_device_descriptor dev = {
 	.bDeviceClass = 0xEF,		/* Miscellaneous Device */
 	.bDeviceSubClass = 2,		/* Common Class */
 	.bDeviceProtocol = 1,		/* Interface Association */
-	/* The USB specification requires that the control endpoint size is 64 bytes in size,
-	 * Best to have its size to 64 bytes in all cases. */
+	/* The USB specification requires that the control endpoint size for high
+	 * speed devices (e.g., stlinkv3) is 64 bytes.
+	 * Best to have its size set to 64 bytes in all cases. */
 	.bMaxPacketSize0 = 64,
 	.idVendor = 0x1D50,
 	.idProduct = 0x6018,

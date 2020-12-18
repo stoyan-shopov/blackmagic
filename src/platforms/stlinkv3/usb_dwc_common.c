@@ -251,11 +251,30 @@ uint16_t dwc_ep_write_packet(usbd_device *usbd_dev, uint8_t addr,
 
 	addr &= 0x7F;
 
-	/* Return if endpoint is already enabled. */
+	/* Note: because of the libopencm3 API specification of this
+	 * function, the type of the return code is 'uint16_t'.
+	 * This means that it is not possible to return a negative
+	 * result code for error. Also, the API specification
+	 * expects that the length of the data packet written to
+	 * the usb core is returned. This means that zero-length
+	 * usb data packets cannot be reliably sent with the current api,
+	 * and zero-length packets are needed in some cases for usb
+	 * cdcacm class interfaces to signify the end of a transfer.
+	 * At the moment, the blackmagic firmware works around this
+	 * limitation by sending a single byte (containing a zero)
+	 * usb packet for the gdb cdcacm interface, whenever a zero-length
+	 * packet needs to be sent. This particular workaround works
+	 * for the blackmagic use case, because the gdb protocol is
+	 * packetized, and the single zero byte will be silently discarded
+	 * by gdb, but this approach is incorrect in general.
+	 *
+	 * For the time being, return zero here in case of error. */
+	/* Return if endpoint is already enabled, which means a packet
+	 * transfer is still in progress. */
 	if (REBASE(OTG_DIEPCTL(addr)) & OTG_DIEPCTL0_EPENA)
-		return 0xffff;
+		return 0;
 	if (REBASE(OTG_DTXFSTS(addr) & 0xffff) < (unsigned)((len + 3) >> 2))
-		return 0xffff;
+		return 0;
 
 	/* Enable endpoint for transmission. */
 	REBASE(OTG_DIEPTSIZ(addr)) = OTG_DIEPSIZ0_PKTCNT | len;
