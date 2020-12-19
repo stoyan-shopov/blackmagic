@@ -161,40 +161,18 @@ void platform_init(void)
 	SCB_EnableDCache();
 	rcc_periph_clock_enable(RCC_GPIOA);
 	rcc_periph_clock_enable(RCC_GPIOB);
+	rcc_periph_clock_enable(RCC_GPIOD);
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
   
 	TMS_SET_MODE();
-
-	/* Configure spi pins - used for swd bus driving. */
-	rcc_periph_clock_enable(RCC_SPI5);
-	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
-	gpio_set_output_options(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_MOSI_PIN);
-	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
-
-	gpio_mode_setup(STLINKV3_MINI_SPI_MISO_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MISO_PIN);
-	gpio_set_af(STLINKV3_MINI_SPI_MISO_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MISO_PIN);
-
-	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_AF, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
-	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
-	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
-
-	/* Set spi port. */
-	spi_init_master(STLINKV3_MINI_SPI, SPI_CR1_BAUDRATE_FPCLK_DIV_8, SPI_CR1_CPOL_CLK_TO_0_WHEN_IDLE,
-			SPI_CR1_CPHA_CLK_TRANSITION_1, SPI_CR1_LSBFIRST);
-	SPI_CR2(STLINKV3_MINI_SPI) |= /* FRXTH */ 1 << 12;
-
-	/* By default, drive the swd bus by gpio bitbanging. */
-	spi_disable(STLINKV3_MINI_SPI);
-
-	/* Float the swdio pin. */
-	gpio_mode_setup(STLINKV3_MINI_SPI_MOSI_PORT, GPIO_MODE_INPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_MOSI_PIN);
-	gpio_set_af(STLINKV3_MINI_SPI_MOSI_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_MOSI_PIN);
+	/* Configure TDI pin. */
+	gpio_mode_setup(TDI_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, TDI_PIN);
+	gpio_set_output_options(TDI_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, TDI_PIN);
 
 	/* Drive the swck pin low. */
 	gpio_mode_setup(STLINKV3_MINI_SPI_SCK_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, STLINKV3_MINI_SPI_SCK_PIN);
 	gpio_set_output_options(STLINKV3_MINI_SPI_SCK_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ, STLINKV3_MINI_SPI_SCK_PIN);
-	gpio_set_af(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_AF_NUMBER, STLINKV3_MINI_SPI_SCK_PIN);
 
 	gpio_clear(STLINKV3_MINI_SPI_SCK_PORT, STLINKV3_MINI_SPI_SCK_PIN); 
 
@@ -202,5 +180,5 @@ void platform_init(void)
 	cdcacm_init();
 	usbuart_init();
 	/* By default, do not drive the swd bus too fast. */
-	platform_max_frequency_set(6000000);
+	platform_max_frequency_set(2000000);
 }
