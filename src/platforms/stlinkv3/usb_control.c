@@ -44,7 +44,7 @@ LGPL License Terms @ref lgpl_license
  * transfer is stalled, the pipe becomes idle. We provide one utility to stall
  * a transaction to reduce boilerplate code.
  */
-static void stall_transaction(usbd_device *usbd_dev)
+static void __attribute__ ((noinline)) stall_transaction(usbd_device *usbd_dev)
 {
 	usbd_ep_stall_set(usbd_dev, 0, 1);
 	usbd_dev->control_state.state = IDLE;

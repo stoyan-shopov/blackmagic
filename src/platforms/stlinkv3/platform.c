@@ -85,6 +85,13 @@ static void SCB_EnableICache (void)
 	__ISB();
 }
 
+
+static void __attribute__ ((noinline)) stall_transaction(void)
+{
+	volatile int x = 0;
+	while (x --);
+}
+
 static void SCB_EnableDCache (void)
 {
 	volatile uint32_t *SCB_CCSIDR = (volatile uint32_t *)(SCB_BASE +  0x80);
@@ -99,6 +106,7 @@ static void SCB_EnableDCache (void)
 	__DSB();
 
 	ccsidr = *SCB_CCSIDR;
+	stall_transaction();
 
 	sets = (uint32_t)(CCSIDR_SETS(ccsidr));
 	do {
@@ -145,6 +153,7 @@ const char *platform_target_voltage(void)
 	static char ret[] = "0.0V";
 	uint8_t channels[] = { ADC_CHANNEL0, };
 	unsigned value;
+	stall_transaction();
 
 	adc_set_regular_sequence(ADC1, 1, channels);
 	adc_start_conversion_regular(ADC1);
@@ -181,6 +190,7 @@ void platform_init(void)
 	rcc_periph_clock_enable(RCC_GPIOD);
 	rcc_periph_clock_enable(RCC_GPIOH);
 	rcc_periph_clock_enable(RCC_GPIOF);
+	stall_transaction();
 
 	/* Initialize ADC. */
 	gpio_mode_setup(GPIOA, GPIO_MODE_ANALOG, GPIO_PUPD_NONE, GPIO0);
