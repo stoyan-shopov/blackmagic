@@ -63,7 +63,7 @@ enum
 };
 
 /* Receive FIFO size in 32-bit words. */
-#define RX_FIFO_SIZE 512
+#define RX_FIFO_SIZE (128 - 8)
 
 static usbd_device *stm32f723_usbd_init(void);
 

@@ -210,7 +210,6 @@ void platform_init(void)
 	gpio_mode_setup(LED_RG_PORT, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, LED_RG_PIN);
 	gpio_set_output_options(LED_RG_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ,
 							LED_RG_PIN);
-
 	/* Relocate interrupt vector table here */
 	extern int vector_table;
 	SCB_VTOR = (uint32_t)&vector_table;
@@ -220,4 +219,21 @@ void platform_init(void)
 	usbuart_init();
 	/* By default, do not drive the swd bus too fast. */
 	platform_max_frequency_set(6000000);
+
+extern usbd_device * usbdev;
+uint32_t buf[512 / sizeof(uint32_t)];
+extern volatile int configured;
+
+volatile int packet_cnt = 0;
+
+	memset(buf, 's', sizeof buf);
+
+	while (!configured)
+		;
+	while (1)
+	{
+		while (usbd_ep_write_packet(usbdev, 0x81, buf, sizeof buf) == 0)
+			;
+		packet_cnt ++;
+	}
 }
