@@ -170,6 +170,7 @@ void platform_request_boot(void)
 	scb_reset_system();
 }
 
+uint32_t buf[6 * (512 / sizeof(uint32_t))];
 void platform_init(void)
 {
 	rcc_periph_clock_enable(RCC_APB2ENR_SYSCFGEN);
@@ -221,7 +222,6 @@ void platform_init(void)
 	platform_max_frequency_set(6000000);
 
 extern usbd_device * usbdev;
-uint32_t buf[512 / sizeof(uint32_t)];
 extern volatile int configured;
 
 volatile int packet_cnt = 0;

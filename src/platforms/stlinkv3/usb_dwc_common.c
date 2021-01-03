@@ -129,9 +129,9 @@ void dwc_ep_setup(usbd_device *usbd_dev, uint8_t addr, uint8_t type,
 	}
 
 	if (dir) {
-		REBASE(OTG_DIEPTXF(addr)) = ((max_size / 4) << 16) |
+		REBASE(OTG_DIEPTXF(addr)) = (((max_size / 4) * 6) << 16) |
 					     usbd_dev->fifo_mem_top;
-		usbd_dev->fifo_mem_top += max_size / 4;
+		usbd_dev->fifo_mem_top += (max_size / 4) * 6;
 
 		REBASE(OTG_DIEPTSIZ(addr)) =
 		    (max_size & OTG_DIEPSIZ0_XFRSIZ_MASK);
@@ -277,7 +277,10 @@ uint16_t dwc_ep_write_packet(usbd_device *usbd_dev, uint8_t addr,
 		return 0;
 
 	/* Enable endpoint for transmission. */
-	REBASE(OTG_DIEPTSIZ(addr)) = OTG_DIEPSIZ0_PKTCNT | len;
+	if (addr == 1)
+		REBASE(OTG_DIEPTSIZ(addr)) = ((len >> 9) << 19) | len;
+	else
+		REBASE(OTG_DIEPTSIZ(addr)) = (1 << 19) | len;
 
 	/* WARNING: it is not explicitly stated in the ST documentation,
 	 * but the usb core fifo memory read/write accesses should not
