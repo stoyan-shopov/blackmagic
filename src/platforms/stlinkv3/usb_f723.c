@@ -65,6 +65,22 @@ enum
 /* Receive FIFO size in 32-bit words. */
 #define RX_FIFO_SIZE 512
 
+static volatile struct
+{
+	int x;
+	int a	: 2;
+	int	: 5;
+	int b	: 7;
+	struct
+	{
+		int xxx : 10;
+		int : 10;
+		int yyy : 5;
+	};
+}
+stall_transaction;
+
+
 static usbd_device *stm32f723_usbd_init(void);
 
 static struct _usbd_device usbd_dev;
@@ -98,6 +114,7 @@ const struct _usbd_driver stm32f723_usb_driver = {
  * enable the delays before starting to debug other stuff. */
 static usbd_device *stm32f723_usbd_init(void)
 {
+	while (stall_transaction.b --);
 	rcc_periph_clock_enable(RCC_GPIOB);
 	gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO14 | GPIO15);
 	gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, GPIO14 | GPIO15);
