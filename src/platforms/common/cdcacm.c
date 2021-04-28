@@ -89,7 +89,7 @@ static const struct usb_endpoint_descriptor gdb_comm_endp[] = {{
 	.bEndpointAddress = 0x82,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
-	.bInterval = 255,
+	.bInterval =  MAX_BINTERVAL,
 }};
 
 static const struct usb_endpoint_descriptor gdb_data_endp[] = {{
@@ -192,7 +192,7 @@ static const struct usb_endpoint_descriptor uart_comm_endp[] = {{
 	.bEndpointAddress = 0x84,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
-	.bInterval = 255,
+	.bInterval =  MAX_BINTERVAL,
 }};
 
 static const struct usb_endpoint_descriptor uart_data_endp[] = {{
