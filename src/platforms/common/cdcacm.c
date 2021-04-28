@@ -32,6 +32,7 @@
 #if defined(PLATFORM_HAS_SLCAN)
 # undef PLATFORM_HAS_TRACESWO
 # define PLATFORM_HAS_TRACESWO
+//# include "traceswo.h"
 #endif
 #if defined(PLATFORM_HAS_TRACESWO)
 #	include "traceswo.h"
@@ -81,7 +82,7 @@ static const struct usb_device_descriptor dev_desc = {
 static const struct usb_endpoint_descriptor gdb_comm_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x82,
+	.bEndpointAddress = (CDCACM_GDB_ENDPOINT + 1) | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval =  MAX_BINTERVAL,
@@ -90,14 +91,14 @@ static const struct usb_endpoint_descriptor gdb_comm_endp[] = {{
 static const struct usb_endpoint_descriptor gdb_data_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x01,
+	.bEndpointAddress = CDCACM_GDB_ENDPOINT,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x81,
+	.bEndpointAddress = CDCACM_GDB_ENDPOINT | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
@@ -133,15 +134,15 @@ static const struct {
 		.bFunctionLength = sizeof(struct usb_cdc_union_descriptor),
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_UNION,
-		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1,
+		.bControlInterface = CDCACM_GDB_INTERFACE,
+		.bSubordinateInterface0 = CDCACM_GDB_INTERFACE + 1,
 	 }
 };
 
 static const struct usb_interface_descriptor gdb_comm_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 0,
+	.bInterfaceNumber = CDCACM_GDB_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 1,
 	.bInterfaceClass = USB_CLASS_CDC,
@@ -158,7 +159,7 @@ static const struct usb_interface_descriptor gdb_comm_iface[] = {{
 static const struct usb_interface_descriptor gdb_data_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 1,
+	.bInterfaceNumber = CDCACM_GDB_INTERFACE + 1,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 2,
 	.bInterfaceClass = USB_CLASS_DATA,
@@ -172,7 +173,7 @@ static const struct usb_interface_descriptor gdb_data_iface[] = {{
 static const struct usb_iface_assoc_descriptor gdb_assoc = {
 	.bLength = USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-	.bFirstInterface = 0,
+	.bFirstInterface = CDCACM_GDB_INTERFACE,
 	.bInterfaceCount = 2,
 	.bFunctionClass = USB_CLASS_CDC,
 	.bFunctionSubClass = USB_CDC_SUBCLASS_ACM,
@@ -184,7 +185,7 @@ static const struct usb_iface_assoc_descriptor gdb_assoc = {
 static const struct usb_endpoint_descriptor uart_comm_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x84,
+	.bEndpointAddress = (CDCACM_UART_ENDPOINT + 1) | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval =  MAX_BINTERVAL,
@@ -193,14 +194,14 @@ static const struct usb_endpoint_descriptor uart_comm_endp[] = {{
 static const struct usb_endpoint_descriptor uart_data_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x03,
+	.bEndpointAddress = CDCACM_UART_ENDPOINT,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE / 2,
 	.bInterval = 1,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x83,
+	.bEndpointAddress = CDCACM_UART_ENDPOINT | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
@@ -224,7 +225,7 @@ static const struct {
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_CALL_MANAGEMENT,
 		.bmCapabilities = 0,
-		.bDataInterface = 3,
+		.bDataInterface = CDCACM_UART_INTERFACE + 1,
 	},
 	.acm = {
 		.bFunctionLength = sizeof(struct usb_cdc_acm_descriptor),
@@ -236,15 +237,15 @@ static const struct {
 		.bFunctionLength = sizeof(struct usb_cdc_union_descriptor),
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_UNION,
-		.bControlInterface = 2,
-		.bSubordinateInterface0 = 3,
+		.bControlInterface = CDCACM_UART_INTERFACE,
+		.bSubordinateInterface0 = CDCACM_UART_INTERFACE + 1,
 	 }
 };
 
 static const struct usb_interface_descriptor uart_comm_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 2,
+	.bInterfaceNumber = CDCACM_UART_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 1,
 	.bInterfaceClass = USB_CLASS_CDC,
@@ -261,7 +262,7 @@ static const struct usb_interface_descriptor uart_comm_iface[] = {{
 static const struct usb_interface_descriptor uart_data_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 3,
+	.bInterfaceNumber = CDCACM_UART_INTERFACE + 1,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 2,
 	.bInterfaceClass = USB_CLASS_DATA,
@@ -275,7 +276,7 @@ static const struct usb_interface_descriptor uart_data_iface[] = {{
 static const struct usb_iface_assoc_descriptor uart_assoc = {
 	.bLength = USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-	.bFirstInterface = 2,
+	.bFirstInterface = CDCACM_UART_INTERFACE,
 	.bInterfaceCount = 2,
 	.bFunctionClass = USB_CLASS_CDC,
 	.bFunctionSubClass = USB_CDC_SUBCLASS_ACM,
@@ -295,7 +296,7 @@ const struct usb_dfu_descriptor dfu_function = {
 const struct usb_interface_descriptor dfu_iface = {
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = DFU_IF_NO,
+	.bInterfaceNumber = DFU_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 0,
 	.bInterfaceClass = 0xFE,
@@ -310,7 +311,7 @@ const struct usb_interface_descriptor dfu_iface = {
 static const struct usb_iface_assoc_descriptor dfu_assoc = {
 	.bLength = USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-	.bFirstInterface = DFU_IF_NO,
+	.bFirstInterface = DFU_INTERFACE,
 	.bInterfaceCount = 1,
 	.bFunctionClass = 0xFE,
 	.bFunctionSubClass = 1,
@@ -322,7 +323,7 @@ static const struct usb_iface_assoc_descriptor dfu_assoc = {
 static const struct usb_endpoint_descriptor trace_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x85,
+	.bEndpointAddress = TRACE_ENDPOINT,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = TRACE_ENDPOINT_SIZE,
 	.bInterval = 0,
@@ -331,7 +332,7 @@ static const struct usb_endpoint_descriptor trace_endp[] = {{
 const struct usb_interface_descriptor trace_iface = {
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 5,
+	.bInterfaceNumber = TRACE_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 1,
 	.bInterfaceClass = 0xFF,
@@ -345,7 +346,7 @@ const struct usb_interface_descriptor trace_iface = {
 static const struct usb_iface_assoc_descriptor trace_assoc = {
 	.bLength = USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-	.bFirstInterface = 5,
+	.bFirstInterface = TRACE_INTERFACE,
 	.bInterfaceCount = 1,
 	.bFunctionClass = 0xFF,
 	.bFunctionSubClass = 0xFF,
@@ -358,7 +359,7 @@ static const struct usb_iface_assoc_descriptor trace_assoc = {
 static const struct usb_endpoint_descriptor slcan_comm_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x87,
+	.bEndpointAddress = (CDCACM_SLCAN_ENDPOINT + 1) | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_INTERRUPT,
 	.wMaxPacketSize = 16,
 	.bInterval =  MAX_BINTERVAL,
@@ -367,14 +368,14 @@ static const struct usb_endpoint_descriptor slcan_comm_endp[] = {{
 static const struct usb_endpoint_descriptor slcan_data_endp[] = {{
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x06,
+	.bEndpointAddress = CDCACM_SLCAN_ENDPOINT,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
 }, {
 	.bLength = USB_DT_ENDPOINT_SIZE,
 	.bDescriptorType = USB_DT_ENDPOINT,
-	.bEndpointAddress = 0x86,
+	.bEndpointAddress = CDCACM_SLCAN_ENDPOINT | USB_REQ_TYPE_IN,
 	.bmAttributes = USB_ENDPOINT_ATTR_BULK,
 	.wMaxPacketSize = CDCACM_PACKET_SIZE,
 	.bInterval = 1,
@@ -398,7 +399,7 @@ static const struct {
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_CALL_MANAGEMENT,
 		.bmCapabilities = 0,
-		.bDataInterface = 7,
+		.bDataInterface = CDCACM_SLCAN_INTERFACE + 1,
 	},
 	.acm = {
 		.bFunctionLength = sizeof(struct usb_cdc_acm_descriptor),
@@ -410,15 +411,15 @@ static const struct {
 		.bFunctionLength = sizeof(struct usb_cdc_union_descriptor),
 		.bDescriptorType = CS_INTERFACE,
 		.bDescriptorSubtype = USB_CDC_TYPE_UNION,
-		.bControlInterface = 6,
-		.bSubordinateInterface0 = 7,
+		.bControlInterface = CDCACM_SLCAN_INTERFACE,
+		.bSubordinateInterface0 = CDCACM_SLCAN_INTERFACE + 1,
 	 }
 };
 
 static const struct usb_interface_descriptor slcan_comm_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 6,
+	.bInterfaceNumber = CDCACM_SLCAN_INTERFACE,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 1,
 	.bInterfaceClass = USB_CLASS_CDC,
@@ -435,7 +436,7 @@ static const struct usb_interface_descriptor slcan_comm_iface[] = {{
 static const struct usb_interface_descriptor slcan_data_iface[] = {{
 	.bLength = USB_DT_INTERFACE_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE,
-	.bInterfaceNumber = 7,
+	.bInterfaceNumber = CDCACM_SLCAN_INTERFACE + 1,
 	.bAlternateSetting = 0,
 	.bNumEndpoints = 2,
 	.bInterfaceClass = USB_CLASS_DATA,
@@ -449,7 +450,7 @@ static const struct usb_interface_descriptor slcan_data_iface[] = {{
 static const struct usb_iface_assoc_descriptor slcan_assoc = {
 	.bLength = USB_DT_INTERFACE_ASSOCIATION_SIZE,
 	.bDescriptorType = USB_DT_INTERFACE_ASSOCIATION,
-	.bFirstInterface = 6,
+	.bFirstInterface = CDCACM_SLCAN_INTERFACE,
 	.bInterfaceCount = 2,
 	.bFunctionClass = USB_CLASS_CDC,
 	.bFunctionSubClass = USB_CDC_SUBCLASS_ACM,
@@ -568,11 +569,11 @@ static enum usbd_request_return_codes  cdcacm_control_request(usbd_device *dev,
 			return USBD_REQ_NOTSUPP;
 
 		switch(req->wIndex) {
-		case 2:
+		case CDCACM_UART_INTERFACE:
 			usbuart_set_line_coding((struct usb_cdc_line_coding*)*buf);
 			return USBD_REQ_HANDLED;
-		case 6:
-		case 0:
+		case CDCACM_GDB_INTERFACE:
+		case CDCACM_SLCAN_INTERFACE:
 			return USBD_REQ_HANDLED; /* Ignore on GDB Port */
 		default:
 			return USBD_REQ_NOTSUPP;
@@ -631,13 +632,12 @@ static uint8_t double_buffer_out[CDCACM_PACKET_SIZE];
 static void slcan_usb_out_cb(usbd_device *dev, uint8_t ep)
 {
 	(void)ep;
-	usbd_ep_nak_set(dev, 6, 1);
-	count_new = usbd_ep_read_packet(dev, 0x6,
+	usbd_ep_nak_set(dev, CDCACM_SLCAN_ENDPOINT, 1);
+	count_new = usbd_ep_read_packet(dev, CDCACM_SLCAN_ENDPOINT,
 									double_buffer_out, CDCACM_PACKET_SIZE);
-	if (!count_new) {
-		usbd_ep_nak_set(dev, 6, 0);
-	}
-	usbd_ep_write_packet(dev, 6, double_buffer_out, count_new);
+	usbd_ep_nak_set(dev, CDCACM_SLCAN_ENDPOINT, 0);
+	usbd_ep_write_packet(dev, CDCACM_SLCAN_ENDPOINT,
+						 double_buffer_out, count_new);
 
 }
 static void slcan_usb_in_cb(usbd_device *dev, uint8_t ep)
@@ -652,35 +652,39 @@ static void cdcacm_set_config(usbd_device *dev, uint16_t wValue)
 
 	/* GDB interface */
 #if defined(STM32F4) || defined(LM4F) || defined(STM32F7)
-	usbd_ep_setup(dev, 0x01, USB_ENDPOINT_ATTR_BULK,
+	usbd_ep_setup(dev, CDCACM_GDB_ENDPOINT, USB_ENDPOINT_ATTR_BULK,
 	              CDCACM_PACKET_SIZE, gdb_usb_out_cb);
 #else
-	usbd_ep_setup(dev, 0x01, USB_ENDPOINT_ATTR_BULK,
+	usbd_ep_setup(dev, CDCACM_GDB_ENDPOINT, USB_ENDPOINT_ATTR_BULK,
 	              CDCACM_PACKET_SIZE, NULL);
 #endif
-	usbd_ep_setup(dev, 0x81, USB_ENDPOINT_ATTR_BULK,
-	              CDCACM_PACKET_SIZE, NULL);
-	usbd_ep_setup(dev, 0x82, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
+	usbd_ep_setup(dev, CDCACM_GDB_ENDPOINT | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_BULK, CDCACM_PACKET_SIZE, NULL);
+	usbd_ep_setup(dev, (CDCACM_GDB_ENDPOINT + 1) | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 
 	/* Serial interface */
-	usbd_ep_setup(dev, 0x03, USB_ENDPOINT_ATTR_BULK,
+	usbd_ep_setup(dev, CDCACM_UART_ENDPOINT, USB_ENDPOINT_ATTR_BULK,
 	              CDCACM_PACKET_SIZE / 2, usbuart_usb_out_cb);
-	usbd_ep_setup(dev, 0x83, USB_ENDPOINT_ATTR_BULK,
-	              CDCACM_PACKET_SIZE, usbuart_usb_in_cb);
-	usbd_ep_setup(dev, 0x84, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
+	usbd_ep_setup(dev, CDCACM_UART_ENDPOINT | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_BULK,
+				  CDCACM_PACKET_SIZE, usbuart_usb_in_cb);
+	usbd_ep_setup(dev, (CDCACM_UART_ENDPOINT + 1) | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 
 #if defined(PLATFORM_HAS_TRACESWO)
 	/* Trace interface */
-	usbd_ep_setup(dev, 0x85, USB_ENDPOINT_ATTR_BULK,
+	usbd_ep_setup(dev, TRACE_ENDPOINT, USB_ENDPOINT_ATTR_BULK,
 					TRACE_ENDPOINT_SIZE, trace_buf_drain);
 #endif
 #if defined(PLATFORM_HAS_SLCAN)
 	/* SLCAN interface */
-	usbd_ep_setup(dev, 0x06, USB_ENDPOINT_ATTR_BULK,
+	usbd_ep_setup(dev, CDCACM_SLCAN_ENDPOINT, USB_ENDPOINT_ATTR_BULK,
 	              CDCACM_PACKET_SIZE, slcan_usb_out_cb);
-	usbd_ep_setup(dev, 0x86, USB_ENDPOINT_ATTR_BULK,
-	              CDCACM_PACKET_SIZE, slcan_usb_in_cb);
-	usbd_ep_setup(dev, 0x87, USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
+	usbd_ep_setup(dev, CDCACM_SLCAN_ENDPOINT | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_BULK, CDCACM_PACKET_SIZE, slcan_usb_in_cb);
+	usbd_ep_setup(dev, (CDCACM_SLCAN_ENDPOINT + 1) | USB_REQ_TYPE_IN,
+				  USB_ENDPOINT_ATTR_INTERRUPT, 16, NULL);
 #endif
 
 	usbd_register_control_callback(dev,
