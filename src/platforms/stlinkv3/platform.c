@@ -140,7 +140,7 @@ bool platform_srst_get_val()
 const char *platform_target_voltage(void)
 {
 	/* On the stlinkv3, the target input voltage is divided by two.
-	 * The ADC is sampling at 12 bit resolution. 
+	 * The ADC is sampling at 12 bit resolution.
 	 * Vref+ input is assumed to be 3.3 volts. */
 	static char ret[] = "0.0V";
 	uint8_t channels[] = { ADC_CHANNEL0, };
@@ -223,6 +223,21 @@ void platform_init(void)
 	gpio_set_output_options(LED_RG_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ,
 							LED_RG_PIN);
 
+	/* CAN Pins
+	 * Configure CAN pin: Slow.  OD and  PullUp for now.
+	 *
+	 * CAN1 is on APB1 with fCPU/4 => 54 MHz
+	 *
+	 *
+	 */
+#define CAN1_PORT GPIOA
+#define CAN1_PINS (GPIO11 | GPIO12)
+#define CAN1_AF 9
+	gpio_mode_setup(CAN1_PORT, GPIO_MODE_AF, GPIO_PUPD_PULLUP, CAN1_PINS);
+	gpio_set_output_options(CAN1_PORT, GPIO_OTYPE_PP, GPIO_OSPEED_2MHZ,
+							CAN1_PINS);
+	gpio_set_af    (CAN1_PORT, CAN1_AF, CAN1_PINS);
+
 	/* Relocate interrupt vector table here */
 	extern int vector_table;
 	SCB_VTOR = (uint32_t)&vector_table;
@@ -230,6 +245,8 @@ void platform_init(void)
 	platform_timing_init();
 	cdcacm_init();
 	usbuart_init();
+	extern void slcan_init();
+	slcan_init();
 	/* By default, do not drive the swd bus too fast. */
 	platform_max_frequency_set(6000000);
 }
